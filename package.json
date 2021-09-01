@@ -30,10 +30,12 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "axios": "0.19.2",
     "cesium": "1.83.0",
     "jquery": "^3.6.0",
     "lodash": "^4.17.21",
-    "three": "^0.130.1"
+    "three": "^0.130.1",
+    "vue": "2.6.11"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",

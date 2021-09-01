@@ -1,8 +1,9 @@
 export class Object3D {
-    constructor (mesh, minWGS84, maxWGS84) {
+    constructor (mesh, minWGS84, maxWGS84, readonly) {
         this.threeMesh = mesh;
         this.minWGS84 = minWGS84;
         this.maxWGS84 = maxWGS84;
+        this.readonly = readonly || false;
     }
 }
 
@@ -27,13 +28,23 @@ export class ObjectStore {
 
     cleanAll () {
         let obj;
+        let readonlyArr = []
         while(obj = this.store.pop()) {
+            
             if (!obj) {
                 continue;
             }
+
+            if (obj.readonly) {
+                readonlyArr.push(obj);
+                continue;
+            }
+            
             obj.threeMesh.clear();
             obj.threeMesh = null;
         }
+
+        readonlyArr.forEach(obj => this.store.push(obj))
     }
 
     remove (name) {
