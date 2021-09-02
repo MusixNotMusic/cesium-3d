@@ -138,6 +138,13 @@ module.exports = {
       vue$: 'vue/dist/vue.js'
     }
   },
+  devServer: {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
+    }
+  },
   plugins: [
     // Vue loader
     new VueLoaderPlugin(),
@@ -165,7 +172,8 @@ module.exports = {
         { from: 'node_modules/cesium/Build/Cesium/Workers', to: 'Workers' },
         { from: 'node_modules/cesium/Build/Cesium/ThirdParty', to: 'ThirdParty' },
         { from: 'node_modules/cesium/Build/Cesium/Assets', to: 'Assets' },
-        { from: 'node_modules/cesium/Build/Cesium/Widgets', to: 'Widgets' }
+        { from: 'node_modules/cesium/Build/Cesium/Widgets', to: 'Widgets' },
+        { from: 'src/assets/data', to: 'data' },
       ]
     }),
 
