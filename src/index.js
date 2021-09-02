@@ -7,6 +7,7 @@ import $axios from '@/config/axios-config.js'
 const main3D = new Main3D()
 window.main3D = main3D;
 loadPng().then((data) => {
+    console.log('data =>', data)
     main3D.main(data)
 })
 

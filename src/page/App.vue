@@ -14,10 +14,11 @@
 
 <script>
 import { loadPng } from '@/3d/lib/FileParser/png/loadPngData';
+import { loadCRPZ } from '@/3d/lib/FileParser/CRPZ/CRPZLoader';
 export default {
   data() {
     return {
-      productionNames: ['points', 'face', 'cube'],
+      productionNames: ['points', 'face', 'cube', 'loader'],
       activeIndex: -1,
       message: 'Example Vue component'
     }
@@ -26,9 +27,16 @@ export default {
       switchMode (index) {
           let indexMapName = ['point', 'face', 'cube']
           this.activeIndex = index;
-          loadPng().then((data) => {
-              this.$main3D.productionSwitch(indexMapName[index], data);
-          })
+          if (index < 3) {
+            loadPng().then((data) => {
+                this.$main3D.productionSwitch(indexMapName[index], data);
+            })
+          } else if( index === 3) {
+            console.log('test loader CRPZ');
+            loadCRPZ().then((data) => {
+                console.log('loadCRPZ CRPZ', data);
+            })
+          }
       }
   }
 }
