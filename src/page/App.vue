@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { loadPng } from '@/3d/lib/loadPngData';
+import { loadPng } from '@/3d/lib/FileParser/png/loadPngData';
 export default {
   data() {
     return {

@@ -2,7 +2,7 @@ import Vue from 'vue'
 import App from '@/page/App.vue'
 
 import { Main3D } from '@/3d/main/index'
-import { loadPng } from '@/3d/lib/loadPngData';
+import { loadPng } from '@/3d/lib/FileParser/png/loadPngData';
 import $axios from '@/config/axios-config.js'
 const main3D = new Main3D()
 window.main3D = main3D;

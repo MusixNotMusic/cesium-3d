@@ -1,5 +1,5 @@
 import * as Cesium from 'cesium'
-import File from './File'
+import File from '../File'
 import ImageUtil from './ImageUtil'
 import RadarNetHeader from './RadarNetHeader'
 var PI = Math.PI
