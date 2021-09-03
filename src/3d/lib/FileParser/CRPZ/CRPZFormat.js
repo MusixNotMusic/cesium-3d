@@ -1,4 +1,5 @@
 // import { CRPZHeader }  from './CRPZHeader'
+import * as Cesium from 'cesium';
 import { getDataFromBuffer } from '../readBufferUtil';
 import { bufferToGB2312  } from '../util';
 
@@ -9,6 +10,9 @@ export class CRPZFormat {
     StationHeadSize = 96;
     DecodeData = [];
     StationHeaders = [];
+    offsetMapVerticesIndex = {};
+    centerLon = -1;
+    centerLat = -1;
 
     readCRHeader (bytes) {
         var bytePos = 0;
@@ -119,7 +123,8 @@ export class CRPZFormat {
      * 读取网格数据点
      * @param {*} bytes 
      */
-    readGridData (bytes) {
+    readGridAbsoluteData (bytes) {
+
         let LeftLongitude = this.CRHeaders.LeftLongitude;
         let RightLongitude = this.CRHeaders.RightLongitude;
         let TopLatitude = this.CRHeaders.TopLatitude;
@@ -131,13 +136,79 @@ export class CRPZFormat {
         let unitWidth = (RightLongitude - LeftLongitude) / widthSize;
         let unitHeight = (TopLatitude - BottomLatitude) / widthSize;
 
-        for (let wIndex = 0; wIndex < widthSize; wIndex++) {
-            for (let hIndex = 0; hIndex < HeightSize; hIndex++) {
-                let val = this.gridIndexMapData(wIndex, hIndex, bytes);
-                if (!this.invalidValue(val)) {
+        this.centerLon = (RightLongitude + LeftLongitude) / 360000 / 2; 
+        this.centerLat = (TopLatitude + BottomLatitude) / 360000 / 2; 
+
+        this.offsetMapVerticesIndex = {};
+
+        for (let hIndex = 0; hIndex < HeightSize; hIndex++) {
+            for (let wIndex = 0; wIndex < widthSize; wIndex++) {
+                let { value, offset } = this.gridIndexMapData(wIndex, hIndex, bytes);
+                if (!this.invalidValue(value)) {
                     let lon = LeftLongitude + unitWidth * wIndex;
                     let lat = BottomLatitude + unitHeight * hIndex;
-                    this.DecodeData.push(lon, lat, val);
+                    this.DecodeData.push(lon, lat, value);
+                    this.offsetMapVerticesIndex[offset] = this.DecodeData.length / 3 - 1;
+                }
+            }
+        }
+    }
+
+
+    /**
+     * 读取网格偏移量数据点
+     * 1、格点数据绝对位置 所有的格点对应绝对的经纬度(lon, lat)
+     *    __________
+     *   /         /
+     *  /         /
+     * /_________/
+     * 
+     * 2、计算相对的位置 偏移量的中心点 
+     *  Center Point:
+     *  centerLon = (LeftLongitude + (RightLongitude - LeftLongitude) / 2)
+     *  centerLat = (BottomLatitude + (TopLatitude - BottomLatitude) / 2)
+     *  O________________________________ x
+     *  |  __________
+     *  | |          |
+     *  | |    .     |
+     *  | |_____\____|
+     *  |        \
+     *  |         \  (translate)
+     *  |         _\________
+     *  |        |  \       |
+     *  |        |   \.     |
+     *  |        |__________|
+     *  y
+     *  translate (LeftLongitude, BottomLatitude)
+     *  relative coordinate to absolute coordinate
+     * 
+     * @param {*} bytes 
+     */
+     readGridRelateData (bytes) {
+        let LeftLongitude = this.CRHeaders.LeftLongitude;
+        let RightLongitude = this.CRHeaders.RightLongitude;
+        let TopLatitude = this.CRHeaders.TopLatitude;
+        let BottomLatitude = this.CRHeaders.BottomLatitude;
+
+        let widthSize = this.CRHeaders.WidthofWin;
+        let HeightSize = this.CRHeaders.HeightofWin;
+
+        let unitWidth = (RightLongitude - LeftLongitude) / widthSize;
+        let unitHeight = (TopLatitude - BottomLatitude) / HeightSize;
+
+        this.centerLon = (RightLongitude + LeftLongitude) / 360000 / 2; 
+        this.centerLat = (TopLatitude + BottomLatitude) / 360000 / 2; 
+
+        this.offsetMapVerticesIndex = {};
+
+        for (let hIndex = 0; hIndex < HeightSize; hIndex++) {
+            for (let wIndex = 0; wIndex < widthSize; wIndex++) {
+                let { value, offset } = this.gridIndexMapData(wIndex, hIndex, bytes);
+                if (!this.invalidValue(value)) {
+                    let lon = unitWidth * wIndex;
+                    let lat = unitHeight * hIndex;
+                    this.DecodeData.push(lon, lat, value);
+                    this.offsetMapVerticesIndex[offset] = this.DecodeData.length / 3 - 1;
                 }
             }
         }
@@ -149,7 +220,11 @@ export class CRPZFormat {
      * @param {*} latIndex 维度索引
      */
     gridIndexMapData (lonIndex, latIndex, bytes) {
-        return bytes[lonIndex * this.CRHeaders.WidthofWin + latIndex]
+        let offset = latIndex * this.CRHeaders.WidthofWin + lonIndex
+        return {
+            offset,
+            value: bytes[offset]
+        }
     }
 
 
@@ -157,6 +232,35 @@ export class CRPZFormat {
         return val < 2 || val > 255 
     }
 
+    linearHight (val) {
+        // return val ** 2;
+        return 4 ** Math.log2(val);
+    }
+
+    /**
+     * 地理坐标转 空间坐标
+     * (lon, lat, hei) -> (x, y, z)
+     */
+    geography2XYZ (lon, lat, height) {
+        return Cesium.Cartesian3.fromDegrees(lon, lat, height || 0);
+    }
+
+    /**
+     * 
+     * @param {*} lon 
+     * @param {*} lat 
+     * @param {*} height 
+     * @param {*} centerX 
+     * @param {*} centerY 
+     */
+    translateByCenter (lon, lat, height, centerX, centerY, centerZ) {
+       let coord = this.geography2XYZ(lon, lat, height)
+       return {
+           x: coord.x - centerX,
+           y: coord.y - centerY,
+           z: coord.z - centerZ,
+       }
+    }
 
 }
 
@@ -168,8 +272,9 @@ CRPZFormat.Load = (bufferData) => {
         let stationOffset = data.FileHeadSize + data.CRHeadSize;
         data.readCRHeader(bufferData.slice(data.FileHeadSize, stationOffset));
         data.readStationHeaders(bufferData.slice(stationOffset, stationOffset + data.StationHeadSize * 3));
-        data.readGridData(bufferData.slice(data.CRHeaders.HeadLen));
-        console.log(Date.now() - start + ' ms');
+        // data.readGridAbsoluteData(bufferData.slice(data.CRHeaders.HeadLen));
+        data.readGridRelateData(bufferData.slice(data.CRHeaders.HeadLen));
+        console.log(Date.now() - start + ' ms', data);
         resolve(data);
     })
 }

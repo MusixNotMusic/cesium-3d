@@ -25,7 +25,7 @@ export default {
   },
   methods: {
       switchMode (index) {
-          let indexMapName = ['point', 'face', 'cube']
+          let indexMapName = ['point', 'face', 'cube', 'extrusion']
           this.activeIndex = index;
           if (index < 3) {
             loadPng().then((data) => {
@@ -34,7 +34,7 @@ export default {
           } else if( index === 3) {
             console.log('test loader CRPZ');
             loadCRPZ().then((data) => {
-                console.log('loadCRPZ CRPZ', data);
+                this.$main3D.productionSwitch(indexMapName[index], data);
             })
           }
       }

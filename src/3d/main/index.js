@@ -9,6 +9,7 @@ import { Object3D, ObjectStore} from './objectStore'
 
 import { drawCubeMesh } from '@/3d/lib/model/drawCubeEle';
 import { drawFaceMesh } from '@/3d/lib/model/drawFaceEle';
+import { drawExtrusionMesh } from '@/3d/lib/model/drawExtrusionFace';
 import { drawPointsMesh } from '@/3d/lib/model/drawPointsEle';
 
 let minWGS84 = [104.065735, 30.659462]
@@ -57,9 +58,10 @@ export class Main3D {
   productionSwitch (type, data) {
     MeteoInstance.objectStoreIns.cleanAll();
     switch(type) {
-      case 'point':  this.drawPoint(data); break;
-      case 'face':   this.drawFace(data); break;
-      case 'cube':   this.drawCube(data); break;
+      case 'point':       this.drawPoint(data); break;
+      case 'face':        this.drawFace(data); break;
+      case 'cube':        this.drawCube(data); break;
+      case 'extrusion':   this.drawExtruion(data); break;
     }
   }
 
@@ -165,6 +167,23 @@ export class Main3D {
     let objectStoreIns = MeteoInstance.objectStoreIns;
     let faceMesh = drawFaceMesh(data);
     MeteoInstance.three.scene.add(faceMesh);
+    objectStoreIns.push(new Object3D(faceMesh, minWGS84, maxWGS84));
+  }
+
+  drawExtruion(data) {
+    let minWGS84 = [data.centerLon, data.centerLat];
+    let maxWGS84 = [data.centerLon, data.centerLat];
+
+    let objectStoreIns = MeteoInstance.objectStoreIns;
+    
+    let faceMesh = drawExtrusionMesh(data);
+    MeteoInstance.three.scene.add(faceMesh);
+
+    objectStoreIns.store.forEach(object => {
+      object.minWGS84 = minWGS84;
+      object.minWGS84 = maxWGS84;
+    });
+
     objectStoreIns.push(new Object3D(faceMesh, minWGS84, maxWGS84));
   }
   
