@@ -1,8 +1,12 @@
 import * as THREE from 'three';
 import { computeExtrusionPointsAndColors } from './compute/computeExtrusionFace';
+import { computeExtrusionCubeAndColors } from './compute/computeExtrusionCube';
 
 export function drawExtrusionMesh(data) {
-  let { vertices, colors, indices } = computeExtrusionPointsAndColors(data);
+  // let { vertices, colors, indices } = computeExtrusionPointsAndColors(data);
+  let { vertices, colors, indices } = computeExtrusionCubeAndColors(data);
+
+  console.log(vertices, colors, indices)
 
   const geometry = new THREE.BufferGeometry();
 
