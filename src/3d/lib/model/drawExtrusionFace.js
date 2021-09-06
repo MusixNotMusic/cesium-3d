@@ -19,6 +19,7 @@ export function drawExtrusionMesh(data) {
   const material = new THREE.MeshBasicMaterial({
     side: THREE.DoubleSide,
     vertexColors: true,
+    depthTest: false
     // opacity: 0.3
   });
  
