@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { triangulationTable, edgesTable } from '../../tables'
 
-export function echoCubeMain(data) {
+export function computeCubeMain(data) {
   // vertices
   let vertices = []
   const colors = []
@@ -12,6 +12,11 @@ export function echoCubeMain(data) {
   let gateLen = data.Header.Gates[data.Header.BandNo]
   // let targetVals = [10, 40, 70, 110, 140, 170]
   let targetVals = [10, 70, 140]
+
+  // 默认色卡
+  const colorCard = null;
+  // const colorCard = MeteoInstance.colorCard;
+
   // vertices
   for (let eleIndex = 0; eleIndex < elevaLen - 1; eleIndex++) {
     for (let azIndex = 0; azIndex < azimuthLen - 1; azIndex++) {
@@ -84,8 +89,11 @@ export function echoCubeMain(data) {
                   targetVal
                 )
                 vertices.push(points[0], points[1], points[2])
-                // color.set(interColor(points[3]))
-                color.set(getColor(points[3]))
+                if (colorCard) {
+                  color.setHex(colorCard[points[3]]);
+                } else {
+                  color.set(getColor(points[3]))
+                }
                 colors.push(color.r, color.g, color.b)
               }
             }

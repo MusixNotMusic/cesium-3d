@@ -1,4 +1,3 @@
-// import { CRPZHeader }  from './CRPZHeader'
 import * as Cesium from 'cesium';
 import { getDataFromBuffer } from '../readBufferUtil';
 import { bufferToGB2312  } from '../util';
@@ -182,6 +181,15 @@ export class CRPZFormat {
      *  translate (LeftLongitude, BottomLatitude)
      *  relative coordinate to absolute coordinate
      * 
+     * https://baike.baidu.com/pic/%E7%BB%8F%E7%BA%AC%E5%BA%A6/1113442/2987296109/71cf3bc79f3df8dc019552f5c711728b4710282e?fr=lemma&ct=cover#aid=2987296109&pic=71cf3bc79f3df8dc019552f5c711728b4710282e
+     *  ___________________
+     * |_0_|_1_|_2_|_3_|_4_|
+     * |_5_|_6_|_7_|_8_|_9_|
+     * |_10|_11|_12|_13|_14|
+     * |_15|_16|_17|_18|_19|
+     * |_20|_21|_22|_23|_24|
+     * |_25|_26|_27|_28|_39|
+     * 
      * @param {*} bytes 
      */
      readGridRelateData (bytes) {
@@ -234,7 +242,7 @@ export class CRPZFormat {
 
     linearHight (val) {
         // return val ** 2;
-        return 4 ** Math.log2(val);
+        return 3.7 ** Math.log2(val);
     }
 
     /**

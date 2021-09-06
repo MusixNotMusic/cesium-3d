@@ -9,35 +9,56 @@
                 <div class="title">{{name}}</div>
             </li>
         </ul>
+        <!-- <div class='color-card'>
+            <clr-view :width="60" :height="200" :baseURL="baseURL" :fileName="fileName"></clr-view>
+        </div> -->
     </div>
 </template>
 
 <script>
 import { loadPng } from '@/3d/lib/FileParser/png/loadPngData';
 import { loadCRPZ } from '@/3d/lib/FileParser/CRPZ/CRPZLoader';
+import ColorProcess from '@/3d/lib/ColorCardParser/color/ColorProcess';
+import ClrView from './components/ClrView.vue';
 export default {
+  components: { ClrView },
   data() {
     return {
-      productionNames: ['points', 'face', 'cube', 'loader'],
+      productionNames: ['点', '面', '体', '挤压'],
       activeIndex: -1,
-      message: 'Example Vue component'
+      baseURL: 'http://cdywweb.asuscomm.com:9091/configs/Clr/',
+      fileName: 'clrZ.clr'
     }
   },
   methods: {
-      switchMode (index) {
-          let indexMapName = ['point', 'face', 'cube', 'extrusion']
-          this.activeIndex = index;
-          if (index < 3) {
-            loadPng().then((data) => {
-                this.$main3D.productionSwitch(indexMapName[index], data);
+    switchMode (index) {
+        let indexMapName = ['point', 'face', 'cube', 'extrusion']
+        this.activeIndex = index;
+        if (index < 3) {
+            const colorPrcess = new ColorProcess()
+            colorPrcess.initPromise(this.fileName, this.baseURL).then((data) => {
+                MeteoInstance.colorCard = data.colorArray.map(hexString => {
+                    return window.parseInt(`0x${hexString.slice(1)}`);
+                });
+                loadPng().then((data) => {
+                    this.$main3D.productionSwitch(indexMapName[index], data);
+                })
+             })
+        } else if( index === 3) {
+            const colorPrcess = new ColorProcess()
+            colorPrcess.initPromise(this.fileName, this.baseURL).then((data) => {
+                MeteoInstance.colorCard = data.colorArray.map(hexString => {
+                    return window.parseInt(`0x${hexString.slice(1)}`);
+                });
+                loadCRPZ().then((data) => {
+                  this.$main3D.productionSwitch(indexMapName[index], data);
+                })
             })
-          } else if( index === 3) {
-            console.log('test loader CRPZ');
-            loadCRPZ().then((data) => {
-                this.$main3D.productionSwitch(indexMapName[index], data);
-            })
-          }
-      }
+          
+        }
+    },
+  },
+  mounted () {
   }
 }
 </script>
@@ -106,6 +127,14 @@ export default {
                     color: #f59a23;
                 }
             }
+        }
+
+        .color-card {
+            position: fixed;
+            left: 20px;
+            bottom: 100px;
+            width: 80px;
+            height: 300px;
         }
     // }
 </style>

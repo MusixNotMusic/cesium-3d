@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { echoPointsAndColors } from './compute/echoFaceVerticesAndColors';
+import { computePointsAndColors } from './compute/computeFaceVerticesAndColors';
 
 export function drawFaceMesh(data) {
-  let { vertices, colors, normals, indices } = echoPointsAndColors(data);
+  let { vertices, colors, normals, indices } = computePointsAndColors(data);
   console.log('drawFaceMesh ==>', vertices);
   const geometry = new THREE.BufferGeometry();
   geometry.setIndex(indices);

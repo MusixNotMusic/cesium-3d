@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-export function echoPointsAndColors(data) {
+export function computePointsAndColors(data) {
   const vertices = []
   const indices = []
   const colors = []
@@ -12,6 +12,10 @@ export function echoPointsAndColors(data) {
   let azimuthLen = 360
   let gateLen = data.Header.Gates[data.Header.BandNo]
   let limit = 200
+
+  // 默认色卡
+  const colorCard = null;
+  // const colorCard = MeteoInstance.colorCard;
 
   // vertices
   for (let eleIndex = 0; eleIndex < elevaLen; eleIndex++) {
@@ -29,8 +33,12 @@ export function echoPointsAndColors(data) {
         }
 
         if (val < limit && val > -limit) {
-          color.setHSL(val / 50, 1.0, 0.5)
-          colors.push(color.r, color.g, color.b)
+          if (colorCard) {
+            color.setHex(colorCard[val]);
+          } else {
+            color.setHSL(val / 50, 1.0, 0.5);
+          }
+          colors.push(color.r, color.g, color.b);
         }
       }
     }

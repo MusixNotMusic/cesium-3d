@@ -12,7 +12,8 @@ export function computeExtrusionPointsAndColors (data) {
     let offsetMapVerticesIndex = data.offsetMapVerticesIndex;
     let widthOfWin = data.CRHeaders.WidthofWin;
 
-    let BottomLatitude = data.CRHeaders.BottomLatitude / 360000;
+    // let BottomLatitude = data.CRHeaders.BottomLatitude / 360000;
+    let TopLatitude = data.CRHeaders.TopLatitude / 360000;
     let LeftLongitude = data.CRHeaders.LeftLongitude / 360000;
     // let center = data.geography2XYZ(LeftLongitude, BottomLatitude);
 
@@ -29,6 +30,10 @@ export function computeExtrusionPointsAndColors (data) {
     let len = dncodeData.length / 3;
   
     const color = new THREE.Color();
+
+    // 默认色卡
+    const colorCard = MeteoInstance.colorCard;
+
     // vertices
     for (let ii = 0; ii < len; ii ++) {
      
@@ -44,12 +49,16 @@ export function computeExtrusionPointsAndColors (data) {
 
     //   let result = data.translateByCenter(lon, lat, 0, centerX, centerY, centerZ);
 
-      let result = data.geography2XYZ(lon + LeftLongitude , lat + BottomLatitude);
+      let result = data.geography2XYZ(lon + LeftLongitude , TopLatitude - lat);
 
       vertices.push(result.x - centerX, result.y - centerY, hei);
 
-      // http://csscoke.com/2015/01/01/rgb-hsl-hex/
-      color.setHSL(((1 - val / 255) * 120) / 360, 1.0, 0.5);
+      if (colorCard) {
+        color.setHex(colorCard[val]);
+      } else {
+        // http://csscoke.com/2015/01/01/rgb-hsl-hex/
+        color.setHSL(((1 - val / 255) * 140 - 20 ) / 360, 1.0, 0.5);
+      }
       colors.push(color.r, color.g, color.b);
     }
   

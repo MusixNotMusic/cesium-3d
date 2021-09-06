@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { echoPointsAndColors } from './compute/echoFaceVerticesAndColors';
+import { computePointsAndColors } from './compute/computeFaceVerticesAndColors';
 
 export function drawPointsMesh(data) {
-    let { vertices, colors } = echoPointsAndColors(data);
+    let { vertices, colors } = computePointsAndColors(data);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
       'position',

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { echoCubeMain } from './compute/echoCube';
+import { computeCubeMain } from './compute/computeCube';
 
 export function drawCubeMesh(data) {
-  let {vertices, colors} = echoCubeMain(data);
+  let { vertices, colors } = computeCubeMain(data);
   let geometry = new THREE.BufferGeometry();
   geometry.setAttribute(
     'position',
