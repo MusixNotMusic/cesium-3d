@@ -18,13 +18,14 @@
 <script>
 import { loadPng } from '@/3d/lib/FileParser/png/loadPngData';
 import { loadCRPZ } from '@/3d/lib/FileParser/CRPZ/CRPZLoader';
+import { loadMax } from '@/3d/lib/FileParser/Max/MaxLoader';
 import ColorProcess from '@/3d/lib/ColorCardParser/color/ColorProcess';
 import ClrView from './components/ClrView.vue';
 export default {
   components: { ClrView },
   data() {
     return {
-      productionNames: ['点', '面', '体', '挤压'],
+      productionNames: ['点', '面', '体', '挤压', 'Max'],
       activeIndex: -1,
       baseURL: 'http://cdywweb.asuscomm.com:9091/configs/Clr/',
       fileName: 'clrZ.clr'
@@ -32,7 +33,7 @@ export default {
   },
   methods: {
     switchMode (index) {
-        let indexMapName = ['point', 'face', 'cube', 'extrusion']
+        let indexMapName = ['point', 'face', 'cube', 'extrusion', 'max']
         this.activeIndex = index;
         if (index < 3) {
             const colorPrcess = new ColorProcess()
@@ -47,6 +48,7 @@ export default {
         } else if( index === 3) {
             const colorPrcess = new ColorProcess()
             colorPrcess.initPromise(this.fileName, this.baseURL).then((data) => {
+                console.log('switchMode ===>', data);
                 MeteoInstance.colorCard = data.colorArray.map(hexString => {
                     return window.parseInt(`0x${hexString.slice(1)}`);
                 });
@@ -55,6 +57,10 @@ export default {
                 })
             })
           
+        } else if( index === 4) {
+            loadMax().then((data) => {
+                console.log('loadMax ==>', data)
+            })
         }
     },
   },

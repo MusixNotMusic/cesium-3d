@@ -32,6 +32,8 @@ export function computeExtrusionCubeAndColors (data) {
   
     const color = new THREE.Color();
 
+    let cubeWidth = 100;
+
     // 默认色卡
     const colorCard = MeteoInstance.colorCard;
 
@@ -57,7 +59,6 @@ export function computeExtrusionCubeAndColors (data) {
       // let rightTop = data.geography2XYZ(lon * 3 / 2 + LeftLongitude , TopLatitude - lat / 2);
       // let leftBottom = data.geography2XYZ(lon / 2 + LeftLongitude , TopLatitude - lat * 3 / 2);
       // let rightBottom = data.geography2XYZ(lon * 3 / 2 + LeftLongitude , TopLatitude - lat * 3 / 2);
-      let cubeWidth = 50;
 
       let leftTop = { x: result.x - cubeWidth, y: result.y - cubeWidth };
       let rightTop = { x: result.x + cubeWidth, y: result.y - cubeWidth };

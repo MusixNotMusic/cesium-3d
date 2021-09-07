@@ -2,9 +2,8 @@
  * 色标文件处理
  * 20200827 增加色标变换处理
  */
-import { reject } from 'lodash'
-import buffer from '../common/buffer'
-import ProductType from '../productType/ProductType'
+import buffer from '../../Common/buffer';
+import ProductType from '@/3d/lib/Common/productType/ProductType';
 // import productConfig from '../product/common/productConfig'
 
 import { getKCheiStrFromVal, getCloudCoverText, getHCLStrFromVal, getSEIStrFromVal, getCloudShape, getCHCLText } from './ColorDescribe'

@@ -14,7 +14,7 @@ export function initThree() {
     var width = window.innerWidth;
     var height = window.innerHeight;
     var aspect = width / height;
-    var near = 1;
+    var near = 10;
     var far = 10 * 1000 * 1000; // needs to be far to support Cesium's world-scale rendering
   
     three.scene = new THREE.Scene();

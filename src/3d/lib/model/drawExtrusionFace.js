@@ -3,8 +3,8 @@ import { computeExtrusionPointsAndColors } from './compute/computeExtrusionFace'
 import { computeExtrusionCubeAndColors } from './compute/computeExtrusionCube';
 
 export function drawExtrusionMesh(data) {
-  // let { vertices, colors, indices } = computeExtrusionPointsAndColors(data);
-  let { vertices, colors, indices } = computeExtrusionCubeAndColors(data);
+  let { vertices, colors, indices } = computeExtrusionPointsAndColors(data);
+  // let { vertices, colors, indices } = computeExtrusionCubeAndColors(data);
 
   console.log(vertices, colors, indices)
 
@@ -19,8 +19,8 @@ export function drawExtrusionMesh(data) {
   const material = new THREE.MeshBasicMaterial({
     side: THREE.DoubleSide,
     vertexColors: true,
-    depthTest: false
-    // opacity: 0.3
+    transparent: false,
+    // depthTest: false
   });
  
   const mesh = new THREE.Mesh(geometry, material);

@@ -1,5 +1,5 @@
 import * as Cesium from 'cesium';
-import { getDataFromBuffer } from '../readBufferUtil';
+import { getDataFromBuffer } from '../Common/readBufferUtil';
 import { bufferToGB2312  } from '../util';
 
 export class CRPZFormat {
@@ -242,7 +242,13 @@ export class CRPZFormat {
 
     linearHight (val) {
         // return val ** 2;
-        return 3.7 ** Math.log2(val);
+        let offset = 80;
+        if (val < offset) {
+            return 0;
+        }
+        if (val >= offset){
+            return 3.8 ** Math.log2(val - offset);
+        }
     }
 
     /**
