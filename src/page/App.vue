@@ -19,6 +19,7 @@
 import { loadPng } from '@/3d/lib/FileParser/png/loadPngData';
 import { loadCRPZ } from '@/3d/lib/FileParser/CRPZ/CRPZLoader';
 import { loadMax } from '@/3d/lib/FileParser/Max/MaxLoader';
+import { measureLine } from '@/3d/lib/tool/measure';
 import ColorProcess from '@/3d/lib/ColorCardParser/color/ColorProcess';
 import ClrView from './components/ClrView.vue';
 export default {
@@ -48,7 +49,6 @@ export default {
         } else if( index === 3) {
             const colorPrcess = new ColorProcess()
             colorPrcess.initPromise(this.fileName, this.baseURL).then((data) => {
-                console.log('switchMode ===>', data);
                 MeteoInstance.colorCard = data.colorArray.map(hexString => {
                     return window.parseInt(`0x${hexString.slice(1)}`);
                 });
@@ -58,13 +58,21 @@ export default {
             })
           
         } else if( index === 4) {
-            loadMax().then((data) => {
-                console.log('loadMax ==>', data)
+            const colorPrcess = new ColorProcess();
+            colorPrcess.initPromise(this.fileName, this.baseURL).then((data) => {
+                MeteoInstance.colorCard = data.colorArray.map(hexString => {
+                    return window.parseInt(`0x${hexString.slice(1)}`);
+                });
+                // measureLine(MeteoInstance.cesium.viewer);
+                loadMax().then((data) => {
+                  this.$main3D.productionSwitch(indexMapName[index], data);
+                });
             })
         }
     },
   },
   mounted () {
+    window.$vue = this;
   }
 }
 </script>

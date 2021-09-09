@@ -14,6 +14,7 @@ String.prototype.getBytes = function () {
   return bytes
 }
 
+
 const buffer = {
   /*
    * @从buffer中读取目标数据
@@ -285,8 +286,21 @@ const buffer = {
       }
     }
     xhr.send()
+  },
+
+  getBytes: function (str) {
+    var bytes = []
+    for (var i = 0; i < str.length; i++) {
+      var charCode = str.charCodeAt(i)
+      var cLen = Math.ceil(Math.log(charCode) / Math.log(256))
+      for (var j = 0; j < cLen; j++) {
+        bytes.push((charCode << (j * 8)) & 0xFF)
+      }
+    }
+    return bytes
   }
 }
+
 export default {
   ...buffer
 }
