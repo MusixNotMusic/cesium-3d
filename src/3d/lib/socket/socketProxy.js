@@ -81,7 +81,7 @@ export default class SocketProxy {
       }
     }
     this.websocket.onerror = function (e) {
-      that.sendFirstClosedNoti(i18n.t('socket.errorSocket'))
+      // that.sendFirstClosedNoti(i18n.t('socket.errorSocket'))
       if (that.isNeedConnect) that.reconnect()
     }
   }
@@ -272,12 +272,12 @@ export default class SocketProxy {
       businessData.setUint8(i - 20, packageData.getUint8(i))// [i-20] = result[i];
     }
 
-    // if (dataType === socketConst.NET_DATA_TYPE_CTTOUT_OPENCLOSERADARST) {
-    //   console.log('dataType === socketConst.NET_DATA_TYPE_CTTOUT_OPENCLOSERADARST ,dataType:' + '0x' + dataType.toString(16))
-    // }
-    // if (socketConst.NET_DATA_TYPE_ACTPACK !== dataType) {
-    //   if (this.dispatchCallback) this.dispatchCallback(socketConst.SOCKET_NOTI, { notiName: socketConst.SOCKET_NOTI, notiType: dataType, notiBody: businessBuffer }) // 全局事件派发
-    // }
+    if (dataType === socketConst.NET_DATA_TYPE_CTTOUT_OPENCLOSERADARST) {
+      console.log('dataType === socketConst.NET_DATA_TYPE_CTTOUT_OPENCLOSERADARST ,dataType:' + '0x' + dataType.toString(16))
+    }
+    if (socketConst.NET_DATA_TYPE_ACTPACK !== dataType) {
+      if (this.dispatchCallback) this.dispatchCallback(socketConst.SOCKET_NOTI, { notiName: socketConst.SOCKET_NOTI, notiType: dataType, notiBody: businessBuffer }) // 全局事件派发
+    }
   }
 
   /** 发送登录验证消息 subtype==socketConst.LOGIN_OUT,表示注销当前用户；其它值表示登录，由于PT没判断 ！= socketConst.LOGIN_OUT的，故都用0 */
@@ -459,23 +459,23 @@ export default class SocketProxy {
     }
 
     // 产品名
-    // let nameStr
+    let nameStr = 'pt';
     // if (i18n.locale === i18n.lanZH) { // 中英文
     //   nameStr = proConfVo.cname
     // } else {
     //   nameStr = proConfVo.ename
     // }
-    // const encodeName = this.textEncoder(nameStr)
+    const encodeName = this.textEncoder(nameStr)
 
-    // for (let i = 0; i < encodeName.length; i++) {
-    //   dataView.setInt8(pos, encodeName[i])
-    //   pos += 1
-    // }
+    for (let i = 0; i < encodeName.length; i++) {
+      dataView.setInt8(pos, encodeName[i])
+      pos += 1
+    }
 
-    // for (let i = encodeName.length; i < socketConst.MAX_FILE_LEN; i++) { // 字节补齐
-    //   dataView.setInt8(pos, 0)
-    //   pos += 1
-    // }
+    for (let i = encodeName.length; i < socketConst.MAX_FILE_LEN; i++) { // 字节补齐
+      dataView.setInt8(pos, 0)
+      pos += 1
+    }
 
     // 产品参数
     if (proConfVo.type === ProductType.USP_TYPE) { // 用户可选降水
@@ -548,7 +548,7 @@ export default class SocketProxy {
     const nameStr = this.setProductDataView(dataView, pos, proConfVo)[1]
 
     // this.dispatchCallback(NameSpace.INSERT + NameSpace.SYSTEMLOG, new SysLogVo(SysLogConst.LOG_TYPE_SOCKET, i18n.t('apply.applySpTLable') + '【' + nameStr + '】', true, true, true))
-
+    console.log('sendOnTimeProductToPT ==>', proConfVo)
     if (proConfVo.level !== 3) this.sendRequestCmd(socketConst.TYPE_IMMEDIATECUSTOMPRO, 0, 0, dataView)
     else this.sendRequestCmd(socketConst.TYPE_IMMEDIATESTREAM, 0, 0, dataView)
   }
