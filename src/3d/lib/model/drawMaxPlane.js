@@ -1,7 +1,9 @@
 import * as THREE from 'three';
+import { DragObjects } from './event/drag';
+import * as Cesium from 'cesium';
 
+let scale = 500; // 700
 export function drawMaxPlane(data) {
-  let scale = 500; // 700
 
   let canvTop = data.toImageCanvas(data.DataTop, data.widthPixel, data.widthPixel); 
   let canvNS = data.toImageCanvas(data.DataNS, data.widthPixel, data.heightPixel, true);
@@ -65,7 +67,10 @@ export function drawMaxPlane(data) {
   var meshMoveNSGroup = new THREE.Group();
   meshMoveNSGroup.add(meshMoveNS);
 
-  addListenerHandle();
+  new DragObjects(meshMoveNS);
+  // demo()
+
+  // addListenerHandle();
   return {
     top: meshTopGroup,
     ns: meshNSGroup,
@@ -76,23 +81,20 @@ export function drawMaxPlane(data) {
 
 
 function addListenerHandle() {
-  window.addEventListener("dragstart", (e) => {
-    e.preventDefault();
-    e.stopPropagation(); 
-  });
-  document.addEventListener('click', onMouseDown );
-  document.addEventListener('mousemove', onMouseMove );
-  document.addEventListener('mouseup', onMouseUp );
-	window.addEventListener( 'keydown', onKeyDown );
-	window.addEventListener( 'keyup', onKeyUp );
+  window.addEventListener('click', onMouseDown );
+  window.addEventListener('mousemove', onMouseMove );
+  window.addEventListener('mouseup', onMouseUp );
+	// window.addEventListener( 'keydown', onKeyDown );
+	// window.addEventListener( 'keyup', onKeyUp );
 }
 
+
 function removeListenerHandle() {
-  document.removeEventListener( 'click', onMouseDown );
-  document.removeEventListener( 'mousemove', onMouseMove );
-  document.removeEventListener( 'mouseup', onMouseUp );
-	window.removeEventListener( 'keydown' );
-	window.removeEventListener( 'keyup' );
+  window.removeEventListener( 'click', onMouseDown );
+  window.removeEventListener( 'mousemove', onMouseMove );
+  window.removeEventListener( 'mouseup', onMouseUp );
+	// window.removeEventListener( 'keydown' );
+	// window.removeEventListener( 'keyup' );
 }
 
 let enableSelection = false;
@@ -117,18 +119,25 @@ function onKeyDown( event ) {
 function onKeyUp() {
 
   enableSelection = false;
-
+  targetObject = null;
   MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableRotate  = !enableSelection;
   // MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableTranslate = !enableSelection;
   // MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableZoom = !enableSelection;
   // MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableTilt = !enableSelection;
 }
 
+function pauseEvent(e){
+  if(e.stopPropagation) e.stopPropagation();
+  if(e.preventDefault) e.preventDefault();
+  e.cancelBubble=true;
+  e.returnValue=false;
+  return false;
+}
 
 
 function onMouseDown( event ) {
   console.log('onMouseDown');
-
+  // pauseEvent(event);
   event.preventDefault();
 
   let camera = MeteoInstance.three.camera;
@@ -136,7 +145,7 @@ function onMouseDown( event ) {
 
   let viewer = MeteoInstance.cesium.viewer;
 
-  if ( enableSelection === true ) {
+  // if ( enableSelection === true ) {
 
     mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
     mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
@@ -164,29 +173,94 @@ function onMouseDown( event ) {
       }
     }
 
-  }
+    if (targetObject) {
+      enableSelection = true
+      MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableRotate  = !enableSelection;
+    }
+
+  // }
 }
 
 function onMouseMove (event) {
-  if (targetObject && enableSelection) {
-    console.log('onMouseMove');
-    let viewer = MeteoInstance.cesium.viewer;
-    let scene = MeteoInstance.three.scene;
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+  console.log('onMouseDown');
+  event.preventDefault();
+    if (targetObject && enableSelection) {
+      let viewer = MeteoInstance.cesium.viewer;
+      mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+      mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
-    let position = { x: mouse.x, y: mouse.y }; 
-    let ray = viewer.camera.getPickRay(position);
-    cartesian2 = viewer.scene.globe.pick(ray, viewer.scene);
-    console.log('onMouseMove =>', cartesian2, targetObject, targetObject.parent.up.y);
-    if (cartesian2 && cartesian1) {
-      targetObject.position.y += cartesian2.y - cartesian1.y
+      let position = { x: mouse.x, y: mouse.y }; 
+      let ray = viewer.camera.getPickRay(position);
+      cartesian2 = viewer.scene.globe.pick(ray, viewer.scene);
+      console.log('onMouseMove =>', cartesian1, cartesian2, targetObject);
+      if (cartesian2 && cartesian1) {
+        targetObject.position.y = (cartesian1.y - cartesian2.y) * scale;
+      }
     }
   }
-}
 
-function onMouseUp (event) {
-  console.log('onMouseUp');
-  
-  targetObject = null;
+  function onMouseUp (event) {
+    event.preventDefault();
+    console.log('onMouseUp');
+    enableSelection = false;
+    targetObject = null;
+    MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableRotate  = !enableSelection;
+  }
+
+
+  function demo () {
+  //   var viewer = new Cesium.Viewer('cesiumContainer',{
+  //     sceneMode: 2,
+  // });
+  var viewer = MeteoInstance.cesium.viewer;
+  viewer.entities.add({
+      id:'id',
+    position : Cesium.Cartesian3.fromDegrees(108.065735, 30.659462),
+    billboard :{
+        image : '/assets/img/logo.png'
+    }
+  });viewer.entities.add({
+      id:'id2',
+    position : Cesium.Cartesian3.fromDegrees(104.065735, 34.659462),
+    billboard :{
+        image : '/assets/img/logo.png'
+    }
+  });
+  var  pointDraged = null;
+  var  leftDownFlag=false;
+  viewer.screenSpaceEventHandler.setInputAction(leftDownAction, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+  viewer.screenSpaceEventHandler.setInputAction(leftUpAction, Cesium.ScreenSpaceEventType.LEFT_UP);
+  viewer.screenSpaceEventHandler.setInputAction(mouseMoveAction, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+  function leftDownAction(e) {
+    console.log("左键按下");
+    var  windowPosition = e.position;
+    pointDraged = viewer.scene.pick(windowPosition);//选取当前的entity
+    leftDownFlag = true;
+    if (pointDraged) {
+      // 如果为true，则允许用户平移地图。如果为假，相机将保持锁定在当前位置。此标志仅适用于2D和Columbus视图模式。
+      viewer.scene.screenSpaceCameraController.enableTranslate = false;//锁定相机
+      viewer.scene.screenSpaceCameraController.enableRotate = false;//锁定相机
+    }
+  }
+  function leftUpAction(e) {
+    console.log("左键抬起");
+    leftDownFlag = false;
+    pointDraged=null;
+    viewer.scene.screenSpaceCameraController.enableTranslate = true;//解锁相机
+    viewer.scene.screenSpaceCameraController.enableRotate = true;//锁定相机
+
+  }
+  function mouseMoveAction(e) {
+    if (leftDownFlag === true && pointDraged) {
+      console.log("鼠标移动");
+      var cartesian = viewer.scene.camera.pickEllipsoid(e.endPosition, viewer.scene.globe.ellipsoid); 
+      console.log(cartesian,pointDraged.id.position);
+      if (cartesian) {
+          pointDraged.id.position = new Cesium.CallbackProperty(function () {
+              return cartesian;
+          }, false);
+
+      }
+    }
+  }
 }

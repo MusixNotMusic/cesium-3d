@@ -127,25 +127,25 @@ export function measureLine(viewer) {
             var textDisance = distance.toFixed(2) + "米";
             if (distance > 10000)
                 textDisance = (distance / 1000.0).toFixed(2) + "千米";
-            floatingPoint = viewer.entities.add({
-                name: '贴地距离',
-                position: labelPt,
-                point: {
-                    pixelSize: 5,
-                    color: Cesium.Color.RED,
-                    outlineColor: Cesium.Color.WHITE,
-                    outlineWidth: 2,
-                },
-                label: {
-                    text: lonLat + textDisance,
-                    font: '18px sans-serif',
-                    fillColor: Cesium.Color.GOLD,
-                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                    outlineWidth: 2,
-                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                    pixelOffset: new Cesium.Cartesian2(20, -20),
-                }
-            });
+                floatingPoint = viewer.entities.add({
+                    name: '贴地距离',
+                    position: labelPt,
+                    point: {
+                        pixelSize: 5,
+                        color: Cesium.Color.RED,
+                        outlineColor: Cesium.Color.WHITE,
+                        outlineWidth: 2,
+                    },
+                    label: {
+                        text: lonLat + textDisance,
+                        font: '18px sans-serif',
+                        fillColor: Cesium.Color.GOLD,
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        outlineWidth: 2,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        pixelOffset: new Cesium.Cartesian2(20, -20),
+                    }
+                });
         });
     }
 }
