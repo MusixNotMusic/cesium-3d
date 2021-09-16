@@ -19,7 +19,6 @@
 import { loadPng } from '@/3d/lib/FileParser/png/loadPngData';
 import { loadCRPZ } from '@/3d/lib/FileParser/CRPZ/CRPZLoader';
 import { loadMax } from '@/3d/lib/FileParser/Max/MaxLoader';
-import { measureLine } from '@/3d/lib/tool/measure';
 import ColorProcess from '@/3d/lib/ColorCardParser/color/ColorProcess';
 import ClrView from './components/ClrView.vue';
 export default {
@@ -29,7 +28,8 @@ export default {
       productionNames: ['点', '面', '体', '挤压', 'Max'],
       activeIndex: -1,
       baseURL: 'http://222.18.149.195:9091/configs/Clr/',
-      fileName: 'clrZ.clr'
+    //   fileName: 'clrZ.clr'
+      fileName: 'clrMAXRef.clr'
     }
   },
   methods: {
@@ -42,6 +42,7 @@ export default {
                 MeteoInstance.colorCard = data.colorArray.map(hexString => {
                     return window.parseInt(`0x${hexString.slice(1)}`);
                 });
+                MeteoInstance.colorArray = data.colorArray;
                 loadPng().then((data) => {
                     this.$main3D.productionSwitch(indexMapName[index], data);
                 })
@@ -52,6 +53,7 @@ export default {
                 MeteoInstance.colorCard = data.colorArray.map(hexString => {
                     return window.parseInt(`0x${hexString.slice(1)}`);
                 });
+                MeteoInstance.colorArray = data.colorArray;
                 loadCRPZ().then((data) => {
                   this.$main3D.productionSwitch(indexMapName[index], data);
                 })
@@ -63,6 +65,7 @@ export default {
                 MeteoInstance.colorCard = data.colorArray.map(hexString => {
                     return window.parseInt(`0x${hexString.slice(1)}`);
                 });
+                MeteoInstance.colorArray = data.colorArray;
                 // measureLine(MeteoInstance.cesium.viewer);
                 loadMax().then((data) => {
                   this.$main3D.productionSwitch(indexMapName[index], data);
@@ -74,53 +77,8 @@ export default {
   mounted () {
     window.$vue = this;
 
-    // this.$socket.loginInfIdentify(this.$socketConst.LOGIN_IN, 'user001', '888888');
-
-    function getConfigVo() {
-        let obj =
-         {
-            "id": 49,
-            "ename": "RCS",
-            "cname": "反射率垂直切割",
-            "cnameAlias": null,
-            "type": 9,
-            "enableApply": 0,
-            "enableTimeApply": 0,
-            "enableQuery": 1,
-            "enableMovie": 0,
-            "productOrder": 0,
-            "typeOfCut": -1,
-            "typeOfMultiLayer": 17,
-            "level": 1,
-            "colorFile": "clrZ.clr",
-            "typeOfEXTRA": -1,
-            "typeOfPZ": -1,
-            "isPZ": 0,
-            "applyConfigFile": null,
-            "typeOfStack": null,
-            "productAlias": "反射率垂直切割",
-            "params": [
-                3025.2150915501893,
-                358,
-                6267.503517416775,
-                190
-            ],
-            "fileParams": [
-                3025.2150915501893,
-                358,
-                6267.503517416775,
-                190
-            ],
-            "sTime": 1631175508000,
-            "eTime": 1631175508000
-        }
-        return obj;
-    }
-
-    const o = getConfigVo()
-    // send
-    // const result = this.$socket.sendOnTimeProductToPT(o, 123);
-    // console.log('result ==>', result)
+    this.$socket.loginInfIdentify(this.$socketConst.LOGIN_IN, 'user001', '888888');
+  
     this.switchMode(4)
   }
 }

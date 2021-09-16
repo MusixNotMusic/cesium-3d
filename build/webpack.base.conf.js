@@ -145,7 +145,16 @@ module.exports = {
       "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
     },
     host: '222.18.149.104',
-    port: '8081'
+    port: '8081',
+    proxy: {
+      '/api': {
+          target: 'http://222.18.149.191:9192',
+          changeOrigin: true,
+          pathRewrite: {
+            '^/api': '/'
+          }
+      }
+  }
   },
   plugins: [
     // Vue loader

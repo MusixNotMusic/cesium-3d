@@ -195,12 +195,13 @@ export class Main3D {
 
     let objectStoreIns = MeteoInstance.objectStoreIns;
     
-    let { top, ns, we, moveNs } = drawMaxPlane(data);
+    let { top, ns, we, moveNs, moveWe } = drawMaxPlane(data);
 
     MeteoInstance.three.scene.add(top);
     MeteoInstance.three.scene.add(ns);
     MeteoInstance.three.scene.add(we);
     MeteoInstance.three.scene.add(moveNs);
+    MeteoInstance.three.scene.add(moveWe);
 
     objectStoreIns.store.forEach(object => {
       object.minWGS84 = minWGS84;
@@ -212,6 +213,7 @@ export class Main3D {
     objectStoreIns.push(new Object3D(we, minWGS84, maxWGS84));
     
     objectStoreIns.push(new Object3D(moveNs, minWGS84, maxWGS84));
+    objectStoreIns.push(new Object3D(moveWe, minWGS84, maxWGS84));
   }
   
   drawAssist() {

@@ -106,7 +106,7 @@ function getInterPointASegmentIntersectionCircle(center, R, pointA, pointB, _dis
  * @param {*} pointB 
  */
 
- function validPoints(center, R, pointA, pointB) {
+ function validPoints1(center, R, pointA, pointB) {
     // center 垂直 A, B  线段是否 与圆相交
     let interPoints = circleLineIntersection(center, R, pointA, pointB)
     if (interPoints.length < 2) {
@@ -345,7 +345,7 @@ function isInside(R, pointA, pointB) {
  * @param pointB 
  * @description 2点夹角
  */
- function vectorDegree (pointA, pointB) {
+ export function vectorDegree (pointA, pointB) {
     var dy = pointB[1] - pointA[1];
     var dx = pointB[0] - pointA[0];
     var theta = Math.atan2(dy, dx); // range (-PI, PI]

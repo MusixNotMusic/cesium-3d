@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { DragObjects } from './event/drag';
-import * as Cesium from 'cesium';
+import { DragObjects, dragMoveCallback, dragMoveWECallback } from './event/drag';
+// import * as Cesium from 'cesium';
 
 let scale = 500; // 700
 export function drawMaxPlane(data) {
@@ -15,12 +15,14 @@ export function drawMaxPlane(data) {
   const planeWE = new THREE.PlaneGeometry(data.widthPixel * scale, data.heightPixel * scale);
 
   const planeMoveNs = new THREE.PlaneGeometry(data.widthPixel * scale, data.heightPixel * scale);
+  const planeMoveWE = new THREE.PlaneGeometry(data.widthPixel * scale, data.heightPixel * scale);
 
-  const materialTop = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
-  const materialNS = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
-  const materialWE = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+  const materialTop = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, opacity: 0.9  });
+  const materialNS = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, opacity: 0.9  });
+  const materialWE = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, opacity: 0.9  });
 
-  const materialMoveNS = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, color: '0xffffff', opacity: 0.3 });
+  const materialMoveNS = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, color: '0xffffff', opacity: 0.6 });
+  const materialMoveWE = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, color: '0xffffff', opacity: 0.6 });
 
   materialTop.map = new THREE.CanvasTexture( canvTop );
   materialNS.map = new THREE.CanvasTexture( canvNS );
@@ -67,200 +69,24 @@ export function drawMaxPlane(data) {
   var meshMoveNSGroup = new THREE.Group();
   meshMoveNSGroup.add(meshMoveNS);
 
-  new DragObjects(meshMoveNS);
-  // demo()
+  const meshMoveWE = new THREE.Mesh(planeMoveWE, materialMoveWE);
+  meshMoveWE.position.z += data.heightPixel / 2 * scale;
+  meshMoveWE.position.x += data.widthPixel / 2 * scale;
+  meshMoveWE.rotation.y = Math.PI / 2;
+  meshMoveWE.rotation.x = Math.PI / 2;
+  meshMoveWE.name = 'moveWe';
+  // meshNS.rotation.y = Math.PI;
+  var meshMoveWEGroup = new THREE.Group();
+  meshMoveWEGroup.add(meshMoveWE);
 
-  // addListenerHandle();
+  new DragObjects(meshMoveNS, dragMoveCallback);
+  new DragObjects(meshMoveWE, dragMoveWECallback);
+
   return {
     top: meshTopGroup,
     ns: meshNSGroup,
     we: meshWEGroup,
-    moveNs: meshMoveNSGroup
+    moveNs: meshMoveNSGroup,
+    moveWe: meshMoveWEGroup
   };
-}
-
-
-function addListenerHandle() {
-  window.addEventListener('click', onMouseDown );
-  window.addEventListener('mousemove', onMouseMove );
-  window.addEventListener('mouseup', onMouseUp );
-	// window.addEventListener( 'keydown', onKeyDown );
-	// window.addEventListener( 'keyup', onKeyUp );
-}
-
-
-function removeListenerHandle() {
-  window.removeEventListener( 'click', onMouseDown );
-  window.removeEventListener( 'mousemove', onMouseMove );
-  window.removeEventListener( 'mouseup', onMouseUp );
-	// window.removeEventListener( 'keydown' );
-	// window.removeEventListener( 'keyup' );
-}
-
-let enableSelection = false;
-const mouse = new THREE.Vector2();
-const raycaster = new THREE.Raycaster();
-let targetObject = null;
-let cartesian1;
-let cartesian2;
-
-function onKeyDown( event ) {
-  // shift
-  // enableSelection = ( event.keyCode === 16 ) ? true : false;
-  enableSelection = ( event.keyCode === 18 ) ? true : false;
-
-  MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableRotate  = !enableSelection;
-  // MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableTranslate = !enableSelection;
-  // MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableZoom = !enableSelection;
-  // MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableTilt = !enableSelection;
-  
-}
-
-function onKeyUp() {
-
-  enableSelection = false;
-  targetObject = null;
-  MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableRotate  = !enableSelection;
-  // MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableTranslate = !enableSelection;
-  // MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableZoom = !enableSelection;
-  // MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableTilt = !enableSelection;
-}
-
-function pauseEvent(e){
-  if(e.stopPropagation) e.stopPropagation();
-  if(e.preventDefault) e.preventDefault();
-  e.cancelBubble=true;
-  e.returnValue=false;
-  return false;
-}
-
-
-function onMouseDown( event ) {
-  console.log('onMouseDown');
-  // pauseEvent(event);
-  event.preventDefault();
-
-  let camera = MeteoInstance.three.camera;
-  let scene = MeteoInstance.three.scene;
-
-  let viewer = MeteoInstance.cesium.viewer;
-
-  // if ( enableSelection === true ) {
-
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-    let position = { x: mouse.x, y: mouse.y }; 
-    let ray = viewer.camera.getPickRay(position);
-    cartesian1 = viewer.scene.globe.pick(ray, viewer.scene);
-    console.log('cartesian1 ==>', cartesian1, mouse, event)
-    raycaster.setFromCamera( mouse, camera );
-
-    const intersections = raycaster.intersectObjects( scene.children, true );
-
-    if ( intersections.length > 0 ) {
-      console.log('intersections ==>', intersections);
-
-      // const object = intersections[ 0 ].object;
-
-      let len = intersections.length;
-      for (let i = 0; i < len; i++) {
-        const object = intersections[ i ].object;
-        if (object.name === 'moveNs') {
-          targetObject = object;
-          break;
-        }
-      }
-    }
-
-    if (targetObject) {
-      enableSelection = true
-      MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableRotate  = !enableSelection;
-    }
-
-  // }
-}
-
-function onMouseMove (event) {
-  console.log('onMouseDown');
-  event.preventDefault();
-    if (targetObject && enableSelection) {
-      let viewer = MeteoInstance.cesium.viewer;
-      mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-      mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-      let position = { x: mouse.x, y: mouse.y }; 
-      let ray = viewer.camera.getPickRay(position);
-      cartesian2 = viewer.scene.globe.pick(ray, viewer.scene);
-      console.log('onMouseMove =>', cartesian1, cartesian2, targetObject);
-      if (cartesian2 && cartesian1) {
-        targetObject.position.y = (cartesian1.y - cartesian2.y) * scale;
-      }
-    }
-  }
-
-  function onMouseUp (event) {
-    event.preventDefault();
-    console.log('onMouseUp');
-    enableSelection = false;
-    targetObject = null;
-    MeteoInstance.cesium.viewer.scene.screenSpaceCameraController.enableRotate  = !enableSelection;
-  }
-
-
-  function demo () {
-  //   var viewer = new Cesium.Viewer('cesiumContainer',{
-  //     sceneMode: 2,
-  // });
-  var viewer = MeteoInstance.cesium.viewer;
-  viewer.entities.add({
-      id:'id',
-    position : Cesium.Cartesian3.fromDegrees(108.065735, 30.659462),
-    billboard :{
-        image : '/assets/img/logo.png'
-    }
-  });viewer.entities.add({
-      id:'id2',
-    position : Cesium.Cartesian3.fromDegrees(104.065735, 34.659462),
-    billboard :{
-        image : '/assets/img/logo.png'
-    }
-  });
-  var  pointDraged = null;
-  var  leftDownFlag=false;
-  viewer.screenSpaceEventHandler.setInputAction(leftDownAction, Cesium.ScreenSpaceEventType.LEFT_DOWN);
-  viewer.screenSpaceEventHandler.setInputAction(leftUpAction, Cesium.ScreenSpaceEventType.LEFT_UP);
-  viewer.screenSpaceEventHandler.setInputAction(mouseMoveAction, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
-  function leftDownAction(e) {
-    console.log("左键按下");
-    var  windowPosition = e.position;
-    pointDraged = viewer.scene.pick(windowPosition);//选取当前的entity
-    leftDownFlag = true;
-    if (pointDraged) {
-      // 如果为true，则允许用户平移地图。如果为假，相机将保持锁定在当前位置。此标志仅适用于2D和Columbus视图模式。
-      viewer.scene.screenSpaceCameraController.enableTranslate = false;//锁定相机
-      viewer.scene.screenSpaceCameraController.enableRotate = false;//锁定相机
-    }
-  }
-  function leftUpAction(e) {
-    console.log("左键抬起");
-    leftDownFlag = false;
-    pointDraged=null;
-    viewer.scene.screenSpaceCameraController.enableTranslate = true;//解锁相机
-    viewer.scene.screenSpaceCameraController.enableRotate = true;//锁定相机
-
-  }
-  function mouseMoveAction(e) {
-    if (leftDownFlag === true && pointDraged) {
-      console.log("鼠标移动");
-      var cartesian = viewer.scene.camera.pickEllipsoid(e.endPosition, viewer.scene.globe.ellipsoid); 
-      console.log(cartesian,pointDraged.id.position);
-      if (cartesian) {
-          pointDraged.id.position = new Cesium.CallbackProperty(function () {
-              return cartesian;
-          }, false);
-
-      }
-    }
-  }
 }
