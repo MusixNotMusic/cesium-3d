@@ -1,9 +1,9 @@
 <template>
     <div class="wrap-production">
         <ul>
-            <li v-for="(name, index) in productionNames" 
-                :key="index" 
-                :class="{'active': index === activeIndex }" 
+            <li v-for="(name, index) in productionNames"
+                :key="index"
+                :class="{'active': index === activeIndex }"
                 @click="switchMode(index)" >
                 <div class="listStyle"></div>
                 <div class="title">{{name}}</div>
@@ -21,6 +21,7 @@ import { loadCRPZ } from '@/3d/lib/FileParser/CRPZ/CRPZLoader';
 import { loadMax } from '@/3d/lib/FileParser/Max/MaxLoader';
 import ColorProcess from '@/3d/lib/ColorCardParser/color/ColorProcess';
 import ClrView from './components/ClrView.vue';
+import { measureLine } from '@/3d/lib/tool/measure';
 export default {
   components: { ClrView },
   data() {
@@ -44,6 +45,7 @@ export default {
                 });
                 MeteoInstance.colorArray = data.colorArray;
                 loadPng().then((data) => {
+                    measureLine(MeteoInstance.cesium.viewer);
                     this.$main3D.productionSwitch(indexMapName[index], data);
                 })
              })
@@ -58,7 +60,7 @@ export default {
                   this.$main3D.productionSwitch(indexMapName[index], data);
                 })
             })
-          
+
         } else if( index === 4) {
             const colorPrcess = new ColorProcess();
             colorPrcess.initPromise(this.fileName, this.baseURL).then((data) => {
@@ -66,7 +68,6 @@ export default {
                     return window.parseInt(`0x${hexString.slice(1)}`);
                 });
                 MeteoInstance.colorArray = data.colorArray;
-                // measureLine(MeteoInstance.cesium.viewer);
                 loadMax().then((data) => {
                   this.$main3D.productionSwitch(indexMapName[index], data);
                 });
@@ -78,8 +79,8 @@ export default {
     window.$vue = this;
 
     this.$socket.loginInfIdentify(this.$socketConst.LOGIN_IN, 'user001', '888888');
-  
-    this.switchMode(4)
+
+    this.switchMode(0)
   }
 }
 </script>
@@ -108,7 +109,7 @@ export default {
             //     width: 30px;
             //    .mark-bar-item {
 
-            //    } 
+            //    }
             // }
 
             ul {
@@ -144,8 +145,8 @@ export default {
                         color: #f59a23;
                     }
                 }
-                li ~ .active {
-                    color: #f59a23;
+               .active {
+                    color: #f59a23 !important;
                 }
             }
         }

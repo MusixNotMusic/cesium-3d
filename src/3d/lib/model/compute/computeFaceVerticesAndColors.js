@@ -14,17 +14,17 @@ export function computePointsAndColors(data) {
   let limit = 200
 
   // 默认色卡
-  const colorCard = null;
-  // const colorCard = MeteoInstance.colorCard;
+  const colorCard = MeteoInstance.colorCard;
+  console.log('colorCard ===>', colorCard, data)
 
   // vertices
   for (let eleIndex = 0; eleIndex < elevaLen; eleIndex++) {
     for (let azIndex = 0; azIndex < azimuthLen; azIndex++) {
       for (let disIndex = 0; disIndex < gateLen; disIndex++) {
-        let result = data.get(eleIndex, azIndex, disIndex)
+        let result = data.getOriginVal(eleIndex, azIndex, disIndex)
         let val = result.val
         let offset = result.offset
-        if (val < limit && val > -limit) {
+        if (val > 2) {
           let coords = data.polar2Cartesian(eleIndex, azIndex, disIndex)
           vertices.push(coords[0], coords[1], coords[2])
           normals.push(0, 1, 0)
@@ -32,9 +32,9 @@ export function computePointsAndColors(data) {
           offsetMapVerticesIndex[offset] = vertices.length / 3 - 1
         }
 
-        if (val < limit && val > -limit) {
+        if (val > 2) {
           if (colorCard) {
-            color.setHex(colorCard[val]);
+            color.setHex(colorCard[val | 0]);
           } else {
             color.setHSL(val / 50, 1.0, 0.5);
           }
@@ -49,7 +49,7 @@ export function computePointsAndColors(data) {
      *  const a = eleIndex * azimuthLen * gateLen + azIndex * gateLen + disIndex + 1
         const b = eleIndex * azimuthLen * gateLen + azIndex * gateLen + disIndex
         const c = eleIndex * azimuthLen * gateLen + (azIndex + 1) * gateLen + disIndex
-        const d = eleIndex * azimuthLen * gateLen + (azIndex + 1) * gateLen + disIndex + 1 
+        const d = eleIndex * azimuthLen * gateLen + (azIndex + 1) * gateLen + disIndex + 1
      */
   for (let offset in offsetMapVerticesIndex) {
     let azIndex = Math.ceil((offset % (azimuthLen * gateLen)) / gateLen)

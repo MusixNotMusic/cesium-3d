@@ -3,7 +3,7 @@ import { origin } from '@/env.config'
 // import picture from '@/images/data/20210723_000003.00.002.001_R1-V.png'
 
 export function loadPng() {
-  let url = 'http://' + origin + '/data/20210723_000003.00.002.001_R1-V.png'
+  let url = 'http://' + origin + '/data/20210826_221804.00.002.001_R3-R.png'
   return new Promise((resolve, reject) => {
     loadBlob(url, 'blob').then((blob) => {
       RadarNetFormat.Load(blob).then((bufferData) => {

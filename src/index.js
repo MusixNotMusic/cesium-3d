@@ -14,6 +14,11 @@ import { registerEmitter } from '@/3d/lib/emitter';
 
 import { socketIP, socketPort } from './env.config'
 
+import { generatorPlane } from '@/3d/test/cesiumPlane';
+import { movePlane } from '@/3d/test/movePlane';
+window.generatorPlane = generatorPlane;
+window.movePlane = movePlane;
+
 const main3D = new Main3D();
 const socket = new SocketProxy(socketIP, socketPort, (type, data) => {
     onWebSocketResult(data);

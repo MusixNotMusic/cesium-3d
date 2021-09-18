@@ -14,8 +14,8 @@ export function computeCubeMain(data) {
   let targetVals = [10, 70, 140]
 
   // 默认色卡
-  const colorCard = null;
-  // const colorCard = MeteoInstance.colorCard;
+  // const colorCard = null;
+  const colorCard = MeteoInstance.colorCard;
 
   // vertices
   for (let eleIndex = 0; eleIndex < elevaLen - 1; eleIndex++) {
@@ -90,7 +90,7 @@ export function computeCubeMain(data) {
                 )
                 vertices.push(points[0], points[1], points[2])
                 if (colorCard) {
-                  color.setHex(colorCard[points[3]]);
+                  color.setHex(colorCard[targetVal]);
                 } else {
                   color.set(getColor(points[3]))
                 }
