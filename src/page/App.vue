@@ -45,7 +45,7 @@ export default {
                 });
                 MeteoInstance.colorArray = data.colorArray;
                 loadPng().then((data) => {
-                    measureLine(MeteoInstance.cesium.viewer);
+                    // measureLine(MeteoInstance.cesium.viewer);
                     this.$main3D.productionSwitch(indexMapName[index], data);
                 })
              })
