@@ -16,12 +16,10 @@ import { socketIP, socketPort } from './env.config'
 
 import { generatorPlane } from '@/3d/test/cesiumPlane';
 import { movePlane } from '@/3d/test/movePlane';
-import { planeMove,  initMouseEventHandler } from '@/3d/test/plane';
+import { initMouseEventHandler } from '@/3d/test/plane';
 window.generatorPlane = generatorPlane;
 window.movePlane = movePlane;
-window.planeMove = planeMove;
-window.initMouseEventHandler = initMouseEventHandler;
-
+// window.planeMove = planeMove;
 const main3D = new Main3D();
 const socket = new SocketProxy(socketIP, socketPort, (type, data) => {
     onWebSocketResult(data);

@@ -63,13 +63,17 @@
         background-repeat: no-repeat;
         background-image: url(Images/ajax-loader.gif);
       }
+
+      .myCanvas {
+        position: absolute;
+      }
     </style>
   </head>
   <body>
     <div id="cesiumContainer"></div>
     <div id="ThreeContainer"></div>
     <div id="pageApp"></div>
-    <!-- <script src="./lib/MeteoLib/MeteoLib.js"></script> -->
+    <canvas class="myCanvas"></canvas>
     <script>
        window.MeteoInstance = {}
     </script>

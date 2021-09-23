@@ -22,6 +22,8 @@ import { loadMax } from '@/3d/lib/FileParser/Max/MaxLoader';
 import ColorProcess from '@/3d/lib/ColorCardParser/color/ColorProcess';
 import ClrView from './components/ClrView.vue';
 import { measureLine } from '@/3d/lib/tool/measure';
+import { MouseMoveWall } from '@/3d/test/plane';
+
 export default {
   components: { ClrView },
   data() {
@@ -46,7 +48,13 @@ export default {
                 MeteoInstance.colorArray = data.colorArray;
                 loadPng().then((data) => {
                     // measureLine(MeteoInstance.cesium.viewer);
+                    console.log('data ==>', data);
+                    new MouseMoveWall(data);
+                    // initMouseEventHandler(data);
+                    MeteoInstance.maxWGS84 = [data.Header.Position[0], data.Header.Position[1]];
+                    MeteoInstance.minWGS84 = [data.Header.Position[0], data.Header.Position[1]];
                     this.$main3D.productionSwitch(indexMapName[index], data);
+                    MeteoInstance.objectStoreIns.updateWGS84();
                 })
              })
         } else if( index === 3) {

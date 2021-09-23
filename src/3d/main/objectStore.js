@@ -26,6 +26,13 @@ export class ObjectStore {
         })
     }
 
+    updateWGS84 () {
+        this.store.forEach(object => {
+            object.minWGS84 = MeteoInstance.minWGS84;
+            object.maxWGS84 = MeteoInstance.maxWGS84;
+        });
+    }
+
     cleanAll () {
         let obj;
         let readonlyArr = []
