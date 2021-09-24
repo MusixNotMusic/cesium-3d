@@ -24,20 +24,21 @@ import * as Cesium from 'cesium';
     let polars = []
     let base = []
     if (InterPoints) {
-        InterPoints.forEach(point => {
-            let _center = new Cesium.Cartesian3(center[0], center[1], center[2])
-            let _point = new Cesium.Cartesian3(point[0], point[1], center[2])
-            let degree = vectorDegree(center, point)
-            let _dis = getGeodesicDistance(_center, _point);
-            // base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis / 1000 })
-            // var point1cartographic = Cesium.Cartographic.fromCartesian(_center);
-            // var point2cartographic = Cesium.Cartographic.fromCartesian(_point);
-            // getTerrainDistance(point1cartographic, point2cartographic).then((_dis) => {
-            //    console.log('_dis ==>', _dis)
-            //    base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis / GateSizeOfReflectivity });
-            // });
-            base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis })
-        })
+      let _center = new Cesium.Cartesian3(center[0], center[1], center[2])
+      window._center = _center;
+      InterPoints.forEach(point => {
+          let _point = new Cesium.Cartesian3(point[0], point[1], center[2])
+          let degree = vectorDegree(center, point)
+          let _dis = getGeodesicDistance(_center, _point);
+          // base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis / 1000 })
+          // var point1cartographic = Cesium.Cartographic.fromCartesian(_center);
+          // var point2cartographic = Cesium.Cartographic.fromCartesian(_point);
+          // getTerrainDistance(point1cartographic, point2cartographic).then((_dis) => {
+          //    console.log('_dis ==>', _dis)
+          //    base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis / GateSizeOfReflectivity });
+          // });
+          base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis })
+      })
         console.log('base ==>', base)
         console.log('距离库 ==>', base[0].binIndex, base[base.length - 1].binIndex)
         console.log('距离 ==>', base[0].dis, base[base.length - 1].dis)
