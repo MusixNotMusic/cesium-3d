@@ -432,3 +432,10 @@ function getGeodesicDistance (pointOne, pointTwo) {
   )
   return geodesic.surfaceDistance
 }
+
+function getSurfaceDistance (pointOne, pointTwo) {
+    var geodesic = new Cesium.EllipsoidGeodesic();
+    geodesic.setEndPoints(pointOne, pointTwo);
+    var distance = geodesic.surfaceDistance;
+    return distance;
+}
