@@ -49,8 +49,8 @@ export default {
                 loadPng().then((data) => {
                     // measureLine(MeteoInstance.cesium.viewer);
                     console.log('data ==>', data);
-                    new MouseMoveWall(data);
-                    // initMouseEventHandler(data);
+                    window.wall = new MouseMoveWall(data);
+                    
                     MeteoInstance.maxWGS84 = [data.Header.Position[0], data.Header.Position[1]];
                     MeteoInstance.minWGS84 = [data.Header.Position[0], data.Header.Position[1]];
                     this.$main3D.productionSwitch(indexMapName[index], data);

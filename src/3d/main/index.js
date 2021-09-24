@@ -12,6 +12,7 @@ import { drawFaceMesh } from '@/3d/lib/model/drawFaceEle';
 import { drawExtrusionMesh } from '@/3d/lib/model/drawExtrusionFace';
 import { drawPointsMesh } from '@/3d/lib/model/drawPointsEle';
 import { drawMaxPlane } from '@/3d/lib/model/drawMaxPlane';
+import { drawGround } from '@/3d/lib/model/drawGround';
 
 let minWGS84 = [104.065735, 30.659462]
 let maxWGS84 = [104.065735, 30.659462]
@@ -241,6 +242,14 @@ export class Main3D {
   
     var _3DOB = new Object3D(axesGridHelper, minWGS84, maxWGS84, true)
     objectStoreIns.push(_3DOB)
+
+
+    // draw ground
+    // let planeGroup = drawGround()
+    // planeGroup.name = 'ground';
+    // MeteoInstance.three.scene.add(planeGroup)
+    // var _3DOB = new Object3D(planeGroup, minWGS84, maxWGS84, true)
+    // objectStoreIns.push(_3DOB)
   }
   
   drawCube(data) {

@@ -14,19 +14,33 @@ import * as Cesium from 'cesium';
 
  export function computeIntersectionSegmentCirclePolar (center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, radarNf) {
     let InterPoints = getInterPointASegmentIntersectionCircle(center, R, pointA, pointB, GateSizeOfReflectivity / density)
+    // test
+    let result = new Cesium.Cartesian3()
+    let _pointA = new Cesium.Cartesian3(pointA[0], pointA[1], pointA[2])
+    let _pointB = new Cesium.Cartesian3(pointB[0], pointB[1], pointB[2])
+    let interPoints2 = Cesium.Cartesian3.lerp(_pointA, _pointB, 0.1, result);
+    console.log('Cesium.Cartesian3.lerp ==》', _pointA, _pointB, result)
+
     let polars = []
     let base = []
     if (InterPoints) {
         InterPoints.forEach(point => {
+            let _center = new Cesium.Cartesian3(center[0], center[1], center[2])
+            let _point = new Cesium.Cartesian3(point[0], point[1], center[2])
             let degree = vectorDegree(center, point)
-            // let degree = vectorDegree(point, center)
-            let _dis = distance(center, point)
-            // let _center = new Cesium.Cartesian3(center[0], 1, center[1])
-            // let _point = new Cesium.Cartesian3(point[0], 1, point[1])
-            // let _dis = getGeodesicDistance(_center, _point);
-            base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity })
+            let _dis = getGeodesicDistance(_center, _point);
+            // base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis / 1000 })
+            // var point1cartographic = Cesium.Cartographic.fromCartesian(_center);
+            // var point2cartographic = Cesium.Cartographic.fromCartesian(_point);
+            // getTerrainDistance(point1cartographic, point2cartographic).then((_dis) => {
+            //    console.log('_dis ==>', _dis)
+            //    base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis / GateSizeOfReflectivity });
+            // });
+            base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis })
         })
         console.log('base ==>', base)
+        console.log('距离库 ==>', base[0].binIndex, base[base.length - 1].binIndex)
+        console.log('距离 ==>', base[0].dis, base[base.length - 1].dis)
        
         let len = Elevations.length;
         let m = 0;
@@ -364,52 +378,31 @@ function isInside(R, pointA, pointB) {
 
 
 function getTerrainDistance(point1cartographic, point2cartographic) {
-  var geodesic = new Cesium.EllipsoidGeodesic();
+  let viewer = MeteoInstance.cesium.viewer;
+  let geodesic = new Cesium.EllipsoidGeodesic();
   geodesic.setEndPoints(point1cartographic, point2cartographic);
-  var s = geodesic.surfaceDistance;
-  var cartoPts = [point1cartographic];
-  for (var jj = 1000; jj < s; jj += 1000) {　　//分段采样计算距离
-      var cartoPt = geodesic.interpolateUsingSurfaceDistance(jj);
+  let s = geodesic.surfaceDistance;
+  let cartoPts = [point1cartographic];
+  for (let jj = 1000; jj < s; jj += 1000) {　　//分段采样计算距离
+      let cartoPt = geodesic.interpolateUsingSurfaceDistance(jj);
       cartoPts.push(cartoPt);
   }
   cartoPts.push(point2cartographic);
   //返回两点之间的距离
   var promise = Cesium.sampleTerrain(viewer.terrainProvider, 8, cartoPts);
-  Cesium.when(promise, function (updatedPositions) {
-      for (var jj = 0; jj < updatedPositions.length - 1; jj++) {
-          var geoD = new Cesium.EllipsoidGeodesic();
-          geoD.setEndPoints(updatedPositions[jj], updatedPositions[jj + 1]);
-          var innerS = geoD.surfaceDistance;
-          innerS = Math.sqrt(Math.pow(innerS, 2) + Math.pow(updatedPositions[jj + 1].height - updatedPositions[jj].height, 2));
-          distance += innerS;
-      }
-      //在三维场景中添加Label
-      var lon1 = viewer.scene.globe.ellipsoid.cartesianToCartographic(labelPt).longitude;
-      var lat1 = viewer.scene.globe.ellipsoid.cartesianToCartographic(labelPt).latitude;
-      var lonLat = "(" + Cesium.Math.toDegrees(lon1).toFixed(2) + "," + Cesium.Math.toDegrees(lat1).toFixed(2) + ")";
-      var textDisance = distance.toFixed(2) + "米";
-      if (distance > 10000)
-          textDisance = (distance / 1000.0).toFixed(2) + "千米";
-          floatingPoint = viewer.entities.add({
-              name: '贴地距离',
-              position: labelPt,
-              point: {
-                  pixelSize: 5,
-                  color: Cesium.Color.RED,
-                  outlineColor: Cesium.Color.WHITE,
-                  outlineWidth: 2,
-              },
-              label: {
-                  text: lonLat + textDisance,
-                  font: '18px sans-serif',
-                  fillColor: Cesium.Color.GOLD,
-                  style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                  outlineWidth: 2,
-                  verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                  pixelOffset: new Cesium.Cartesian2(20, -20),
-              }
-          });
-  });
+  return new Promise((resolve, reject) => {
+      Cesium.when(promise, function (updatedPositions) {
+        let distance = 0;
+        for (var jj = 0; jj < updatedPositions.length - 1; jj++) {
+            var geoD = new Cesium.EllipsoidGeodesic();
+            geoD.setEndPoints(updatedPositions[jj], updatedPositions[jj + 1]);
+            var innerS = geoD.surfaceDistance;
+            innerS = Math.sqrt(Math.pow(innerS, 2) + Math.pow(updatedPositions[jj + 1].height - updatedPositions[jj].height, 2));
+            distance += innerS;
+        }
+        resolve(distance);
+    });
+  })
 }
 /**
  * 返回两点之间的测地距离。
@@ -422,15 +415,15 @@ function getGeodesicDistance (pointOne, pointTwo) {
   const { Ellipsoid, EllipsoidGeodesic } = Cesium
   const pickedPointCartographic = Ellipsoid.WGS84.cartesianToCartographic(
     pointOne
-  )
+  );
   const lastPointCartographic = Ellipsoid.WGS84.cartesianToCartographic(
     pointTwo
-  )
+  );
   const geodesic = new EllipsoidGeodesic(
     pickedPointCartographic,
     lastPointCartographic
-  )
-  return geodesic.surfaceDistance
+  );
+  return geodesic.surfaceDistance;
 }
 
 function getSurfaceDistance (pointOne, pointTwo) {

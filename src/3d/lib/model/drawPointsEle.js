@@ -17,7 +17,7 @@ export function drawPointsMesh(data) {
     var points = new THREE.Points(geometry, material);
     
     points.rotation.x = Math.PI / 2;
-    points.rotation.y = Math.PI;
+    points.rotation.y = -Math.PI / 2;
     
     var pointsGroup = new THREE.Group();
     pointsGroup.add(points);
