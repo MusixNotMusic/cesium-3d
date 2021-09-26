@@ -245,11 +245,10 @@ export class Main3D {
 
 
     // draw ground
-    // let planeGroup = drawGround()
-    // planeGroup.name = 'ground';
-    // MeteoInstance.three.scene.add(planeGroup)
-    // var _3DOB = new Object3D(planeGroup, minWGS84, maxWGS84, true)
-    // objectStoreIns.push(_3DOB)
+    let planeGroup = drawGround()
+    MeteoInstance.three.scene.add(planeGroup)
+    var _3DOB = new Object3D(planeGroup, minWGS84, maxWGS84, true)
+    objectStoreIns.push(_3DOB)
   }
   
   drawCube(data) {

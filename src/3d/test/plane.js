@@ -1,12 +1,16 @@
 import * as Cesium from 'cesium';
 import * as THREE from 'three';
 import { 
-    getInterPointASegmentIntersectionCircle,
-    computeIntersectionSegmentCirclePolar
-} from '@/3d/lib/math';
+    computeIntersectionSegmentCirclePolar,
+    subractLocation
+} from '@/3d/lib/mathCesium';
+
+import { Object3D } from '@/3d/main/objectStore';
+
+import { throttle } from 'lodash'
 
 window.Cesium = Cesium;
-export class MouseMoveWall {
+export class MouseMoveWall2 {
     constructor (data) {
         this.radarNf = data;
         this.positions = []; 
@@ -16,6 +20,8 @@ export class MouseMoveWall {
         this.startPicker = false;
         this.endPicker = false;
         this.poly = undefined;
+
+        this._computeClipLineDot = throttle(this.computeClipLineDot.bind(this), 30);
         this.initMouseEventHandler();
     }
 
@@ -80,7 +86,7 @@ export class MouseMoveWall {
                 this.startPicker = true;
             } else {
                 this.positions[1] = cartesian;
-                this.computeClipLineDot();
+                this._computeClipLineDot();
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
     
@@ -94,7 +100,7 @@ export class MouseMoveWall {
                     // positions.push(cartesian);
                     if (!this.endPicker) {
                         this.positions[1] = cartesian;
-                        this.computeClipLineDot();
+                        this._computeClipLineDot();
                     }
                 }
             }
@@ -113,6 +119,7 @@ export class MouseMoveWall {
      *  计算截面的 线数据
      */
     computeClipLineDot () {
+        let now = Date.now();
         // origin data
         let GateSizeOfReflectivity = this.radarNf.Header.GateSizeOfReflectivity; // 库距离
         let GateSize = this.radarNf.Header.Gates[this.radarNf.Header.BandNo];
@@ -125,7 +132,7 @@ export class MouseMoveWall {
         let cartographic = Cesium.Cartesian3.fromDegrees(Position[0], Position[1], Position[2]);
         let center = [cartographic.x, cartographic.y, cartographic.z];
         
-        let density = 1/8;
+        let density = 1 / 4;
         // let intersections = getInterPointASegmentIntersectionCircle( center, R, pointA, pointB, GateSizeOfReflectivity);
         let polar = computeIntersectionSegmentCirclePolar( center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, this.radarNf);
         // console.log('intersections',  intersections);
@@ -136,30 +143,9 @@ export class MouseMoveWall {
             console.log('delta polar', polar[0][polar[0].length - 1].azIndex - polar[0][0].azIndex);
             this.draw2DImage(polar);
         }
-    }
+        console.log('computeClipLineDot speed time =>', Date.now() - now, ' ms');
 
-    /**
-     * 极坐标转换为2d像素点
-     * 对应radarNf数据
-     * @param {*} polarCoords 
-     */
-    polorTransfrom2DImage (polarCoords) {
-        let layers2DVal = [];
-        let Elevations = this.radarNf.Header.Elevations; // 仰角
-        let GateSizeOfReflectivity = this.radarNf.Header.GateSizeOfReflectivity; // 库距离
-    
-        Elevations.forEach((ele, index) => {
-            let layer = [];
-            polarCoords.forEach(polar => {
-                let val = this.radarNf.getOriginVal(index, polar.radian | 0,  polar.distance / Math.cos(ele) / GateSizeOfReflectivity | 0);
-                layer.push(val);
-            })
-            layers2DVal.push(layer);
-        })
-    
-        return layers2DVal;
     }
-
 
     draw2DImage (layers) {
         const canvas = document.querySelector('.myCanvas')
@@ -224,7 +210,7 @@ export class MouseMoveWall {
 }
 
 
-export class MouseMoveWall2 {
+export class MouseMoveWall {
     constructor (data) {
         this.radarNf = data;
         this.positions = []; 
@@ -232,26 +218,127 @@ export class MouseMoveWall2 {
         this.scene = this.viewer.scene;
         // this.handler = new Cesium.ScreenSpaceEventHandler(this.scene.canvas);
 
-        this.shiftDown = false;
+        this.shiftDown = true;
         this.pcikerStartPoint = false;
-        this.pointCount = 0;
-        this.moveVector3 = new THREE.Vector3(0, 0, 0);;
-        this.startVector3 = new THREE.Vector3(0, 0, 0);;
-        this.endVector3 = new THREE.Vector3(0, 0, 0);;
+        this.clickCount = 0;
 
-        this.startPoints = new THREE.Vector3(0, 0, 0);
-        this.endPoints = new THREE.Vector3(0, 0, 0);
+        this.movePlane = null;
+        this._computeClipLineDot = throttle(this.computeClipLineDot.bind(this), 30);
+
+        this.raycaster = new THREE.Raycaster();
+        //  创建移动截面模板
+        this.createMovePlane();
+
+        // 笛卡尔 center
+        let Position = this.radarNf.Header.Position;
+        this.center = Cesium.Cartesian3.fromDegrees(Position[0], Position[1], Position[2]);
+
+        this.prevPoint = new THREE.Vector3();
 
         this.listenerEvents.bind(this)();
+    }
+
+    getMovePlane () {
+        if (!this.movePlane) {
+            return this.createMovePlane();
+        }
+        return this.movePlane;
+    }
+
+    createMovePlane () {
+        // move panel
+        let vetices = [
+            1, 0, 1, 
+            1, 1, 1, 
+            0, 0, 1, 
+            0, 0, 1, 
+            0, 1, 1, 
+            1, 1, 1 
+        ]
+        let colors = [
+            Math.random(), 
+            Math.random(), 
+            Math.random(), 
+
+            Math.random(), 
+            Math.random(), 
+            Math.random(), 
+            
+            Math.random(), 
+            Math.random(), 
+            Math.random(), 
+            
+            Math.random(), 
+            Math.random(), 
+            Math.random(), 
+            
+            Math.random(), 
+            Math.random(), 
+            Math.random(), 
+            
+            Math.random(), 
+            Math.random(), 
+            Math.random()
+        ]
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vetices, 3 ) );
+        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+        // geometry.computeBoundingSphere();
+        const material = new THREE.MeshBasicMaterial( {side: THREE.DoubleSide, vertexColors: true} );
+        this.movePlane = new THREE.Mesh( geometry, material );
+        this.movePlane.name = 'movePlane';
+        this.movePlane.rotation.x = Math.PI / 2;
+        this.movePlane.rotation.y = Math.PI;
+
+        MeteoInstance.three.scene.add(this.movePlane);
+        let minWGS84 = MeteoInstance.minWGS84;
+        let maxWGS84 = MeteoInstance.maxWGS84;
+        var _3DOB = new Object3D(this.movePlane, minWGS84, maxWGS84, true)
+        let objectStoreIns = MeteoInstance.objectStoreIns;
+        objectStoreIns.push(_3DOB)
+    }
+
+    updateMovePlane (vectorA, vectorB) {
+        let vectorCenter = new THREE.Vector3(this.center.x, this.center.y, this.center.z);
+        // vectorA = new THREE.Vector3().subVectors(vectorA, vectorCenter);
+        // vectorB = new THREE.Vector3().subVectors(vectorB, vectorCenter);
+        vectorA = subractLocation(vectorA, vectorCenter);
+        vectorB = subractLocation(vectorB, vectorCenter);
+        vectorA = new THREE.Vector3(vectorA.x, vectorA.y, vectorA.z);
+        vectorB = new THREE.Vector3(vectorB.x, vectorB.y, vectorB.z);
+        console.log('vectorA, vectorB', vectorA, vectorB);
+        vectorA.z = 0;
+        vectorB.z = 0;
+        // let ax = vectorA.x - this.center.x;
+        // let ay = vectorA.y - this.center.y;
+        // let az = vectorA.z - this.center.z;
+
+        let hA =  new THREE.Vector3().copy(vectorA);
+        let hB =  new THREE.Vector3().copy(vectorB);
+
+        hA.z += 30000;
+        hB.z += 30000;
+
+        let vertices = []
+        vertices.push(...vectorB.toArray())
+        vertices.push(...vectorA.toArray())
+        vertices.push(...hA.toArray())
+        vertices.push(...vectorB.toArray())
+        vertices.push(...hB.toArray())
+        vertices.push(...hA.toArray())
+
+        // meshPlane.geometry.attributes.position.needsUpdate = true
+        this.movePlane.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
     }
 
     listenerEvents() {
         // let domElement = MeteoInstance.three.renderer.domElement;
         let domElement = MeteoInstance.cesium.viewer.scene.canvas;
         
-        window.addEventListener('keydown', this.keyDownHandle.bind(this))
+        // window.addEventListener('keydown', this.keyDownHandle.bind(this))
     
-        window.addEventListener('keyup', this.keyUpHandle.bind(this))
+        // window.addEventListener('keyup', this.keyUpHandle.bind(this))
     
         domElement.addEventListener('click', this.clickHandle.bind(this))
     
@@ -268,23 +355,32 @@ export class MouseMoveWall2 {
         if (e.key === 'Shift') {
             this.shiftDown = false;
             this.pickerStartPoint = false;
-            this.pointCount = 0;
+            this.clickCount = 0;
         }
+    }
+
+    clearHandleStatus () {
+        this.clickCount = 0;
+        this.pickerStartPoint = false;
     }
 
     clickHandle(e) {
         if (this.shiftDown) {
             console.log('click ==>', e)
-            this.pickerStartPoint = true;
-            if (this.pointCount === 0) {
-                this.startVector3 = this.screen2World(e);
-                // this.startPoints.position.copy(this.startVector3);
-                this.pointCount++;
-            } else if (this.pointCount === 1) {
-                this.endVector3 = this.screen2World(e);
-                // this.endPoints.position.copy(this.endVector3);
-                // this.insertPlane(this.startVector3, this.endVector3);
+            if (this.clickCount === 2) {
+                this.clearHandleStatus();
+            }
+            if (this.clickCount === 0) {
+                this.positions[0] = this.screen2World(e);
+                this.clickCount++;
+                this.pickerStartPoint = true;
+            } else if (this.clickCount === 1) {
+                this.positions[1] = this.screen2World(e);
                 this.pickerStartPoint = false;
+                this.clickCount++;
+                console.log('this.startVector3 this.endVector3', this.positions)
+                this.updateMovePlane(this.positions[0], this.positions[1]);
+                this._computeClipLineDot();
             }
 
         }
@@ -293,10 +389,10 @@ export class MouseMoveWall2 {
     mouseMoveHandle(e) {
         if (this.pickerStartPoint) {
             console.log('mousemove ==>', e)
-            // pickerStartPoint = true
-            this.moveVector3 = this.screen2World(e)
-            // this.endPoints.position.copy(this.moveVector3)
-            // this.insertPlane(this.startVector3, this.moveVector3)
+            this.positions[1] = this.screen2World(e)
+            this.updateMovePlane(this.positions[0], this.positions[1]);
+            this._computeClipLineDot();
+            console.log('this.startVector3 this.endVector3', this.positions)
         }
     }
 
@@ -306,6 +402,7 @@ export class MouseMoveWall2 {
      * @returns 
      */
     screen2World (event) {
+        let now = Date.now();
         let wrap = event.target.parentNode;
         let left = wrap.getBoundingClientRect().left;
         let top = wrap.getBoundingClientRect().top;
@@ -317,31 +414,30 @@ export class MouseMoveWall2 {
         let camera = MeteoInstance.three.camera;
         let scene = MeteoInstance.three.scene;
 
-        var scene1 = MeteoInstance.cesium.viewer.scene;
-        var cartesian = scene1.camera.pickEllipsoid({x: clientX, y: clientY}, scene1.globe.ellipsoid);
-        console.log('cesium cartesian', cartesian);
         mouse.x = (clientX / wrap.offsetWidth) * 2 - 1;
         mouse.y = -(clientY / wrap.offsetHeight) * 2 + 1;
 
         console.log( mouse.x,  mouse.y);
 
-        let raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, camera);
-    
-        let intersects = raycaster.intersectObjects(scene.children, true);
+        this.raycaster.setFromCamera(mouse, camera);
+        let ground = scene.getObjectByName('ground');
+        let intersects = this.raycaster.intersectObjects([ground], true);
         console.log('intersects ==>', intersects);
-        if (intersects.length >= 1){
-            let ground = intersects.find(item => item.object.name === 'ground');
-            return ground ? ground.point : new THREE.Vector3(0, 0, 0);
+        if (intersects.length == 1){
+            let ground = intersects[0];
+            console.log('delta time ==>', Date.now() - now, ' ms');
+            this.prevPoint = ground.point;
+            return ground.point;
         }
-        return new THREE.Vector3(0, 0, 0);
+
+        return this.prevPoint;
     }
     
     
     /**
      *  计算截面的 线数据
      */
-    computeClipLineDot () {
+     computeClipLineDot () {
         // origin data
         let GateSizeOfReflectivity = this.radarNf.Header.GateSizeOfReflectivity; // 库距离
         let GateSize = this.radarNf.Header.Gates[this.radarNf.Header.BandNo];
@@ -351,18 +447,16 @@ export class MouseMoveWall2 {
         let R = GateSizeOfReflectivity * GateSize;
         let pointA = [this.positions[0].x, this.positions[0].y, this.positions[0].z];
         let pointB = [this.positions[1].x, this.positions[1].y, this.positions[1].z];
-        let cartographic = Cesium.Cartesian3.fromDegrees(Position[0], Position[1], Position[2]);
-        let center = [cartographic.x, cartographic.y, cartographic.z];
+        let center = [this.center.x, this.center.y, this.center.z];
         
         let density = 1/4;
-        // let intersections = getInterPointASegmentIntersectionCircle( center, R, pointA, pointB, GateSizeOfReflectivity);
         let polar = computeIntersectionSegmentCirclePolar( center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, this.radarNf);
-        // console.log('intersections',  intersections);
-        // console.log('polar',  polar);
-        console.log('polar', polar[0][0].azIndex, polar[0][polar[0].length - 1].azIndex);
-        // let _2DData = this.polorTransfrom2DImage(polar);
-        // console.log('_2DData ==>', _2DData);
-        this.draw2DImage(polar);
+        if (polar && polar.length > 0) {
+            console.log('polar', polar[0][0].azIndex, polar[0][polar[0].length - 1].azIndex);
+
+            console.log('delta polar', polar[0][polar[0].length - 1].azIndex - polar[0][0].azIndex);
+            this.draw2DImage(polar);
+        }
     }
 
     /**
@@ -389,6 +483,7 @@ export class MouseMoveWall2 {
 
 
     draw2DImage (layers) {
+        let now = Date.now();
         const canvas = document.querySelector('.myCanvas')
         const width = layers[0].length
         const height = layers.length
@@ -424,6 +519,7 @@ export class MouseMoveWall2 {
             canvas.setAttribute('class', 'myCanvas')
             canvas.setAttribute('style', `width: ${canvasWidth}; height: ${canvasHeight}; margin-left: calc(50% - ${canvasWidth / 2}px)`)
         }
+        console.log('draw image time ===>', Date.now() - now, ' ms');
     }
 
      /**

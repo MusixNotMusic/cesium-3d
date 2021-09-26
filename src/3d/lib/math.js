@@ -13,21 +13,23 @@ import * as Cesium from 'cesium';
  */
 
  export function computeIntersectionSegmentCirclePolar (center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, radarNf) {
-    let InterPoints = getInterPointASegmentIntersectionCircle(center, R, pointA, pointB, GateSizeOfReflectivity / density)
+    // let InterPoints = getInterPointASegmentIntersectionCircle(center, R, pointA, pointB, GateSizeOfReflectivity / density);
     // test
-    let result = new Cesium.Cartesian3()
-    let _pointA = new Cesium.Cartesian3(pointA[0], pointA[1], pointA[2])
-    let _pointB = new Cesium.Cartesian3(pointB[0], pointB[1], pointB[2])
-    let interPoints2 = Cesium.Cartesian3.lerp(_pointA, _pointB, 0.1, result);
-    console.log('Cesium.Cartesian3.lerp ==》', _pointA, _pointB, result)
-
+    // let result = new Cesium.Cartesian3()
+    // let _pointA = new Cesium.Cartesian3(pointA[0], pointA[1], pointA[2])
+    // let _pointB = new Cesium.Cartesian3(pointB[0], pointB[1], pointB[2])
+    // let interPoints2 = Cesium.Cartesian3.lerp(_pointA, _pointB, 0.1, result);
+    // console.log('Cesium.Cartesian3.lerp ==》', _pointA, _pointB, result)
+    let InterPoints = interTwoPoints(pointA, pointB, GateSizeOfReflectivity, R, density);
+    console.log('Cesium.Cartesian3.lerp ==》', pointA, pointB, InterPoints)
+    let Gates = R / GateSizeOfReflectivity + 1;
     let polars = []
     let base = []
     if (InterPoints) {
       let _center = new Cesium.Cartesian3(center[0], center[1], center[2])
       window._center = _center;
       InterPoints.forEach(point => {
-          let _point = new Cesium.Cartesian3(point[0], point[1], center[2])
+          let _point = new Cesium.Cartesian3(point[0], point[1], point[2])
           let degree = vectorDegree(center, point)
           let _dis = getGeodesicDistance(_center, _point);
           // base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, dis: _dis / 1000 })
@@ -50,7 +52,7 @@ import * as Cesium from 'cesium';
             polars[m] = base.map(polarPoint => {
                 let azIndex = polarPoint.azIndex;
                 let binIndex = polarPoint.binIndex / Math.cos(ele);
-                let val = radarNf.getOriginVal(i, azIndex | 0,  binIndex | 0).val;
+                let val = binIndex > Gates ? 0 : radarNf.getOriginVal(i, azIndex | 0,  binIndex | 0).val;
                 return { 
                   azIndex,
                   binIndex,
@@ -60,7 +62,39 @@ import * as Cesium from 'cesium';
         }
         return polars;
     } 
-    return []
+    return [];
+}
+
+/**
+ * 2点之间 等距离插值
+ * @param {*} pointA 
+ * @param {*} pointB 
+ * @param {*} deltaDis 
+ * @param {*} density  取值密度
+ * @param {*} R  插值半径
+ * 
+ * 
+ */
+export function interTwoPoints (pointA, pointB, deltaDis, R, density) {
+  let _pointA = new Cesium.Cartesian3(pointA[0], pointA[1], pointA[2]);
+  let _pointB = new Cesium.Cartesian3(pointB[0], pointB[1], pointB[2]);
+  let result = new Cesium.Cartesian3();
+  // 去最小值
+  let actualDistance = getGeodesicDistance(_pointA, _pointB);
+  // 截取最远点
+  // if (actualDistance > R) {
+  //   _pointB = Cesium.Cartesian3.lerp(_pointA, _pointB, R / actualDistance, result);
+  // }
+  let surfaceDis = Math.min(actualDistance, R);
+  let len = surfaceDis / deltaDis * density;
+  let upLen = Math.ceil(len);
+  let interpArr = [];
+  for (let i = 0; i < upLen; i++) {
+    let interPoints = Cesium.Cartesian3.lerp(_pointA, _pointB, i > len ? 1 : i / upLen, result);
+    // interpArr.push(interPoints);
+    interpArr.push([interPoints.x, interPoints.y, interPoints.z]);
+  }
+  return interpArr;
 }
 
 export function getInterPointASegmentIntersectionCircle(center, R, pointA, pointB, _distance) {
@@ -377,34 +411,6 @@ function isInside(R, pointA, pointB) {
     return theta;
 }
 
-
-function getTerrainDistance(point1cartographic, point2cartographic) {
-  let viewer = MeteoInstance.cesium.viewer;
-  let geodesic = new Cesium.EllipsoidGeodesic();
-  geodesic.setEndPoints(point1cartographic, point2cartographic);
-  let s = geodesic.surfaceDistance;
-  let cartoPts = [point1cartographic];
-  for (let jj = 1000; jj < s; jj += 1000) {　　//分段采样计算距离
-      let cartoPt = geodesic.interpolateUsingSurfaceDistance(jj);
-      cartoPts.push(cartoPt);
-  }
-  cartoPts.push(point2cartographic);
-  //返回两点之间的距离
-  var promise = Cesium.sampleTerrain(viewer.terrainProvider, 8, cartoPts);
-  return new Promise((resolve, reject) => {
-      Cesium.when(promise, function (updatedPositions) {
-        let distance = 0;
-        for (var jj = 0; jj < updatedPositions.length - 1; jj++) {
-            var geoD = new Cesium.EllipsoidGeodesic();
-            geoD.setEndPoints(updatedPositions[jj], updatedPositions[jj + 1]);
-            var innerS = geoD.surfaceDistance;
-            innerS = Math.sqrt(Math.pow(innerS, 2) + Math.pow(updatedPositions[jj + 1].height - updatedPositions[jj].height, 2));
-            distance += innerS;
-        }
-        resolve(distance);
-    });
-  })
-}
 /**
  * 返回两点之间的测地距离。
  * @param {Cartesian3} pointOne 第一个坐标点
