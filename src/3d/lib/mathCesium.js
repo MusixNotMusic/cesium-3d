@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium';
+import * as THREE from 'three';
 /**
  *  计算极坐标 
  *     xz 平面 弧度交 xzRadian
@@ -49,6 +50,89 @@ import * as Cesium from 'cesium';
         return polars;
     } 
     return [];
+}
+
+
+/**
+ *  计算 空间坐标 
+ *     xz 平面 弧度交 xzRadian
+ *     xz 平面 center 到 point 距离 distance       
+ * @param {*} center 
+ * @param {*} R 
+ * @param {*} pointA 
+ * @param {*} pointB 
+ * @param {*} _distance 距离库 距离计算公式
+ * @param {*} Elevations Array<Int> 仰角
+ * @returns 
+ */
+
+ export function computeIntersectionSegmentCircleSpace (center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, radarNf) {
+  let InterPoints = interTwoPoints(pointA, pointB, GateSizeOfReflectivity, R, density);
+  let Gates = R / GateSizeOfReflectivity + 1;
+  let base = []
+  let Colors = new THREE.Color();
+  let vertices = [];
+  let colors = [];
+  let indices = [];
+  let valMap = [];
+  if (InterPoints) {
+      let _center = new Cesium.Cartesian3(center[0], center[1], center[2])
+
+      InterPoints.forEach(point => {
+          let _point = new Cesium.Cartesian3(point[0], point[1], point[2]);
+          let degree = getSpaceTwoPointDegree(_center, _point);
+          let _dis = getGeodesicDistance(_center, _point);
+          let vector = subractLocation(_point, _center);
+          base.push({ azIndex: degree, binIndex: _dis / GateSizeOfReflectivity, distance: _dis, vector: vector });
+      })
+
+      console.log('base ==>', base)
+
+      let len = Elevations.length;
+      let baseLen = base.length;
+      for(let i = 0; i < len; i++) {
+          let ele = Elevations[i] / 180 * Math.PI;
+          base.forEach((polarPoint, m) => {
+              let azIndex = polarPoint.azIndex;
+              let binIndex = polarPoint.binIndex / Math.cos(ele);
+              let val = binIndex > Gates ? 0 : radarNf.getOriginVal(i, azIndex | 0,  binIndex | 0).val;
+              valMap[i * baseLen + m] = val;
+              // 颜色
+              let rgb = Colors.setHex(MeteoInstance.colorCard[val | 0]);
+              // 坐标
+              let x = polarPoint.vector.x;
+              let y = polarPoint.vector.y;
+              // let z = polarPoint.vector.z + 2000 * i;
+              let z = polarPoint.distance * Math.tan(ele) * 1.5;
+              vertices.push(x, y, z);
+              // normals.push(0, 1, 0)
+              colors.push(rgb.r, rgb.g, rgb.b);
+          })
+      }
+
+      for(let i = 0; i < len - 1; i++) { 
+        for(let m = 0; m < baseLen - 1; m ++) {
+          let bottom = m;
+          let up = (i + 1) * baseLen + m;
+          if (valMap[up + 1] > 0) {
+            indices.push(bottom + 1, bottom, up + 1);
+          }
+          if (valMap[up] > 0 && valMap[up + 1] > 0) {
+            indices.push(bottom, up, up + 1);
+          }
+        }
+      }
+  } 
+  console.log('vertices ==>', vertices);
+  console.log('colors   ==>', colors);
+  console.log('indices  ==>', indices);
+  console.log('valMap  ==>', valMap);
+  return {
+    vertices,
+    colors,
+    indices,
+    // normals
+  };
 }
 
 /**

@@ -2,6 +2,7 @@ import * as Cesium from 'cesium';
 import * as THREE from 'three';
 import { 
     computeIntersectionSegmentCirclePolar,
+    computeIntersectionSegmentCircleSpace,
     subractLocation
 } from '@/3d/lib/mathCesium';
 
@@ -224,7 +225,7 @@ export class MouseMoveWall {
 
         this.movePlane = null;
         this._computeClipLineDot = throttle(this.computeClipLineDot.bind(this), 30);
-
+        this._updateMeshMovePlane = throttle(this.updateMeshMovePlane.bind(this), 30);
         this.raycaster = new THREE.Raycaster();
         //  创建移动截面模板
         this.createMovePlane();
@@ -286,10 +287,11 @@ export class MouseMoveWall {
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
         // geometry.computeBoundingSphere();
         const material = new THREE.MeshBasicMaterial( {side: THREE.DoubleSide, vertexColors: true} );
+        // const material = new THREE.PointsMaterial({ size: 150, vertexColors: true });
         this.movePlane = new THREE.Mesh( geometry, material );
         this.movePlane.name = 'movePlane';
-        this.movePlane.rotation.x = Math.PI / 2;
-        this.movePlane.rotation.y = Math.PI;
+        // this.movePlane.rotation.x = Math.PI / 2;
+        // this.movePlane.rotation.y = Math.PI;
 
         MeteoInstance.three.scene.add(this.movePlane);
         let minWGS84 = MeteoInstance.minWGS84;
@@ -321,15 +323,42 @@ export class MouseMoveWall {
         hB.z += 30000;
 
         let vertices = []
-        vertices.push(...vectorB.toArray())
-        vertices.push(...vectorA.toArray())
-        vertices.push(...hA.toArray())
-        vertices.push(...vectorB.toArray())
-        vertices.push(...hB.toArray())
-        vertices.push(...hA.toArray())
+        // vertices.push(...vectorB.toArray())
+        // vertices.push(...vectorA.toArray())
+        // vertices.push(...hA.toArray())
+        // vertices.push(...vectorB.toArray())
+        // vertices.push(...hB.toArray())
+        // vertices.push(...hA.toArray())
 
+        vertices.push(...vectorA.toArray())
+        vertices.push(...vectorB.toArray())
+        vertices.push(...hA.toArray())
+        vertices.push(...hB.toArray())
+        let indices = [1, 0, 2, 1, 2, 3];
         // meshPlane.geometry.attributes.position.needsUpdate = true
-        this.movePlane.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
+        this.movePlane.geometry.setIndex(indices);
+        this.movePlane.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    }
+
+    updateMeshMovePlane() {
+        let GateSizeOfReflectivity = this.radarNf.Header.GateSizeOfReflectivity; // 库距离
+        let GateSize = this.radarNf.Header.Gates[this.radarNf.Header.BandNo];
+        let Elevations = this.radarNf.Header.Elevations;
+        // calc data
+        let R = GateSizeOfReflectivity * GateSize;
+        let pointA = [this.positions[0].x, this.positions[0].y, this.positions[0].z];
+        let pointB = [this.positions[1].x, this.positions[1].y, this.positions[1].z];
+        let center = [this.center.x, this.center.y, this.center.z];
+        
+        let density = 1/4;
+        let now = Date.now()
+        let { vertices, colors, indices,  normals} = computeIntersectionSegmentCircleSpace( center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, this.radarNf);
+        console.log('computeIntersectionSegmentCircleSpace ==>', Date.now() - now, ' ms');
+        // meshPlane.geometry.attributes.position.needsUpdate = true
+        this.movePlane.geometry.setIndex(indices);
+        this.movePlane.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        this.movePlane.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        this.movePlane.geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     }
 
     listenerEvents() {
@@ -378,9 +407,9 @@ export class MouseMoveWall {
                 this.positions[1] = this.screen2World(e);
                 this.pickerStartPoint = false;
                 this.clickCount++;
-                console.log('this.startVector3 this.endVector3', this.positions)
-                this.updateMovePlane(this.positions[0], this.positions[1]);
-                this._computeClipLineDot();
+                // this.updateMovePlane(this.positions[0], this.positions[1]);
+                // this._computeClipLineDot();
+                this._updateMeshMovePlane();
             }
 
         }
@@ -390,9 +419,9 @@ export class MouseMoveWall {
         if (this.pickerStartPoint) {
             console.log('mousemove ==>', e)
             this.positions[1] = this.screen2World(e)
-            this.updateMovePlane(this.positions[0], this.positions[1]);
-            this._computeClipLineDot();
-            console.log('this.startVector3 this.endVector3', this.positions)
+            // this.updateMovePlane(this.positions[0], this.positions[1]);
+            // this._computeClipLineDot();
+            this._updateMeshMovePlane();
         }
     }
 
