@@ -103,7 +103,8 @@ import * as THREE from 'three';
               let x = polarPoint.vector.x;
               let y = polarPoint.vector.y;
               // let z = polarPoint.vector.z + 2000 * i;
-              let z = polarPoint.distance * Math.tan(ele) * 1.5;
+              let z = polarPoint.distance * Math.tan(ele) * 2;
+              // let z = polarPoint.distance * Math.tan(ele);
               vertices.push(x, y, z);
               // normals.push(0, 1, 0)
               colors.push(rgb.r, rgb.g, rgb.b);
@@ -114,12 +115,15 @@ import * as THREE from 'three';
         for(let m = 0; m < baseLen - 1; m ++) {
           let bottom = m;
           let up = (i + 1) * baseLen + m;
+         
           if (valMap[up + 1] > 0) {
             indices.push(bottom + 1, bottom, up + 1);
           }
           if (valMap[up] > 0 && valMap[up + 1] > 0) {
             indices.push(bottom, up, up + 1);
           }
+          // indices.push(bottom + 1, bottom, up + 1);
+          // indices.push(bottom, up, up + 1);
         }
       }
   } 

@@ -290,8 +290,6 @@ export class MouseMoveWall {
         // const material = new THREE.PointsMaterial({ size: 150, vertexColors: true });
         this.movePlane = new THREE.Mesh( geometry, material );
         this.movePlane.name = 'movePlane';
-        // this.movePlane.rotation.x = Math.PI / 2;
-        // this.movePlane.rotation.y = Math.PI;
 
         MeteoInstance.three.scene.add(this.movePlane);
         let minWGS84 = MeteoInstance.minWGS84;
@@ -350,7 +348,7 @@ export class MouseMoveWall {
         let pointB = [this.positions[1].x, this.positions[1].y, this.positions[1].z];
         let center = [this.center.x, this.center.y, this.center.z];
         
-        let density = 1/4;
+        let density = 1;
         let now = Date.now()
         let { vertices, colors, indices,  normals} = computeIntersectionSegmentCircleSpace( center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, this.radarNf);
         console.log('computeIntersectionSegmentCircleSpace ==>', Date.now() - now, ' ms');
@@ -478,7 +476,7 @@ export class MouseMoveWall {
         let pointB = [this.positions[1].x, this.positions[1].y, this.positions[1].z];
         let center = [this.center.x, this.center.y, this.center.z];
         
-        let density = 1/4;
+        let density = 1/2;
         let polar = computeIntersectionSegmentCirclePolar( center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, this.radarNf);
         if (polar && polar.length > 0) {
             console.log('polar', polar[0][0].azIndex, polar[0][polar[0].length - 1].azIndex);
