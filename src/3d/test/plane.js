@@ -10,6 +10,8 @@ import { Object3D } from '@/3d/main/objectStore';
 
 import { throttle } from 'lodash'
 
+import * as d3 from 'd3'
+
 window.Cesium = Cesium;
 export class MouseMoveWall2 {
     constructor (data) {
@@ -137,7 +139,7 @@ export class MouseMoveWall2 {
         // let intersections = getInterPointASegmentIntersectionCircle( center, R, pointA, pointB, GateSizeOfReflectivity);
         let polar = computeIntersectionSegmentCirclePolar( center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, this.radarNf);
         // console.log('intersections',  intersections);
-        // console.log('polar',  polar);
+        console.log('computeIntersectionSegmentCirclePolar',  polar);
         if (polar && polar.length > 0) {
             console.log('polar', polar[0][0].azIndex, polar[0][polar[0].length - 1].azIndex);
 
@@ -405,9 +407,9 @@ export class MouseMoveWall {
                 this.positions[1] = this.screen2World(e);
                 this.pickerStartPoint = false;
                 this.clickCount++;
-                // this.updateMovePlane(this.positions[0], this.positions[1]);
-                // this._computeClipLineDot();
-                this._updateMeshMovePlane();
+                this.updateMovePlane(this.positions[0], this.positions[1]);
+                this._computeClipLineDot();
+                // this._updateMeshMovePlane();
             }
 
         }
@@ -417,9 +419,9 @@ export class MouseMoveWall {
         if (this.pickerStartPoint) {
             console.log('mousemove ==>', e)
             this.positions[1] = this.screen2World(e)
-            // this.updateMovePlane(this.positions[0], this.positions[1]);
-            // this._computeClipLineDot();
-            this._updateMeshMovePlane();
+            this.updateMovePlane(this.positions[0], this.positions[1]);
+            this._computeClipLineDot();
+            // this._updateMeshMovePlane();
         }
     }
 
@@ -478,11 +480,13 @@ export class MouseMoveWall {
         
         let density = 1/2;
         let polar = computeIntersectionSegmentCirclePolar( center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, this.radarNf);
+        console.log('computeIntersectionSegmentCirclePolar ==>', polar);
         if (polar && polar.length > 0) {
             console.log('polar', polar[0][0].azIndex, polar[0][polar[0].length - 1].azIndex);
 
             console.log('delta polar', polar[0][polar[0].length - 1].azIndex - polar[0][0].azIndex);
-            this.draw2DImage(polar);
+            // this.draw2DImage(polar);
+            this.drawSpaceImage(polar);
         }
     }
 
@@ -508,7 +512,10 @@ export class MouseMoveWall {
         return layers2DVal;
     }
 
-
+    /**
+     * 距离库 方位角定位
+     * @param {*} layers 
+     */
     draw2DImage (layers) {
         let now = Date.now();
         const canvas = document.querySelector('.myCanvas')
@@ -548,6 +555,100 @@ export class MouseMoveWall {
         }
         console.log('draw image time ===>', Date.now() - now, ' ms');
     }
+
+
+    /**
+     * 空间距离定位，增加高度
+     * @param {*} layers 
+     */
+     drawSpaceImage (layers, evelations) {
+        // let now = Date.now();
+        let canvas = document.querySelector('.myCanvas')
+     
+        const color = new THREE.Color()
+        const colorArray = MeteoInstance.colorArray;
+
+        // 预处理 插值
+       
+       
+
+        const n = 40;
+        const width = layers[0].length
+        const height = layers.length
+        const interpolate = this.bilinearInterpolator((i, j) => layers[j][i].val)
+        const results = d3.range(0, height - 1, 1 / 10).map(y => (
+            d3.range(0, width - 1, 1).map(x => {
+                return interpolate(x, y);
+            })
+        ));
+
+        canvas = this.imshow(results, 1, d3.interpolateTurbo)
+        let canvasWidth = canvas.clientWidth
+        let canvasHeight = canvas.clientHeight
+        // canvas.width = results[0].length
+        // canvas.height = results.length
+        canvas.setAttribute('class', 'myCanvas')
+        canvas.setAttribute('style', `width: ${canvasWidth}; height: ${canvasHeight}; margin-left: calc(50% - ${canvasWidth / 2}px)`)
+    }
+
+    bilinearInterpolator = func => (x, y) => {
+        // "func" is a function that takes 2 integer arguments and returns some value
+        const x1 = Math.floor(x);
+        const x2 = Math.ceil(x);
+        const y1 = Math.floor(y);
+        const y2 = Math.ceil(y);
+      
+        if ((x1 === x2) && (y1 === y2)) return func(x1, y1);
+        if (x1 === x2) {
+          return (func(x1, y1) * (y2 - y) + func(x1, y2) * (y - y1)) / (y2 - y1);
+        }
+        if (y1 === y2) {
+          return (func(x1, y1) * (x2 - x) + func(x2, y1) * (x - x1)) / (x2 - x1);
+        }
+      
+        // else: x1 != x2 and y1 != y2
+        return (
+          func(x1, y1) * (x2 - x) * (y2 - y) +
+          func(x2, y1) * (x - x1) * (y2 - y) +
+          func(x1, y2) * (x2 - x) * (y - y1) +
+          func(x2, y2) * (x - x1) * (y - y1)
+        )
+        / ((x2 - x1) * (y2 - y1));
+    }
+
+    imshow(data, pixelSize, color) {
+        // Flatten 2D input array
+        const flat = [].concat.apply([], data);
+        // Color Scale & Min-Max normalization
+        const [min, max] = d3.extent(flat);
+        const normalize = d => ((d-min)/(max-min));
+        const colorScale = d => color(normalize(d));
+        // Shape of input array
+        const shape = {x: data[0].length, y: data.length};
+      
+        // Set up canvas element
+        const canvas = document.querySelector('.myCanvas');
+        const context = canvas.getContext("2d");
+        context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+        canvas.style.width  = `${shape.x * pixelSize}px`;
+        canvas.style.height = `${shape.y * pixelSize}px`;
+        canvas.width = shape.x * pixelSize;
+        canvas.height = shape.y * pixelSize;
+        canvas.style.imageRendering = "pixelated";
+      
+        // Draw pixels to the canvas
+        const imageData = context.createImageData(shape.x, shape.y);
+        flat.forEach((d, i) => {
+          let color = isNaN(d) ? {r: 0, g: 0, b: 0} : d3.color(MeteoInstance.colorArray[d | 0]);
+          imageData.data[i*4  ] = color.r;
+          imageData.data[i*4+1] = color.g;
+          imageData.data[i*4+2] = color.b;
+          imageData.data[i*4+3] = 255;
+        });
+        context.putImageData(imageData, 0, 0);
+      
+        return canvas;
+      }
 
      /**
      * 
