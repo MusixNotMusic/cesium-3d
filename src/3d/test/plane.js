@@ -6,6 +6,12 @@ import {
     subractLocation
 } from '@/3d/lib/mathCesium';
 
+import { 
+    imageShow,
+    calcSpaceInterData,
+    calcGridInterData
+} from '@/3d/lib/interpolation';
+
 import { Object3D } from '@/3d/main/objectStore';
 
 import { throttle } from 'lodash'
@@ -144,13 +150,13 @@ export class MouseMoveWall2 {
             console.log('polar', polar[0][0].azIndex, polar[0][polar[0].length - 1].azIndex);
 
             console.log('delta polar', polar[0][polar[0].length - 1].azIndex - polar[0][0].azIndex);
-            this.draw2DImage(polar);
+            this.draw2DPiexlImage(polar);
         }
         console.log('computeClipLineDot speed time =>', Date.now() - now, ' ms');
 
     }
 
-    draw2DImage (layers) {
+    draw2DPiexlImage (layers) {
         const canvas = document.querySelector('.myCanvas')
         const width = layers[0].length
         const height = layers.length
@@ -283,13 +289,15 @@ export class MouseMoveWall {
             Math.random(), 
             Math.random()
         ]
-
+        // const geometry = new THREE.PlaneGeometry(data.widthPixel * scale, data.heightPixel * scale);
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vetices, 3 ) );
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
         // geometry.computeBoundingSphere();
-        const material = new THREE.MeshBasicMaterial( {side: THREE.DoubleSide, vertexColors: true} );
-        // const material = new THREE.PointsMaterial({ size: 150, vertexColors: true });
+        const material = new THREE.MeshBasicMaterial( {side: THREE.DoubleSide } );
+        // const material = new THREE.MeshBasicMaterial( {side: THREE.DoubleSide, vertexColors: true} );
+        material.map = new THREE.CanvasTexture( document.querySelector('.myCanvas') );
+        material.map.needsUpdate = true;
         this.movePlane = new THREE.Mesh( geometry, material );
         this.movePlane.name = 'movePlane';
 
@@ -351,9 +359,7 @@ export class MouseMoveWall {
         let center = [this.center.x, this.center.y, this.center.z];
         
         let density = 1;
-        let now = Date.now()
         let { vertices, colors, indices,  normals} = computeIntersectionSegmentCircleSpace( center, R, pointA, pointB, GateSizeOfReflectivity, density, Elevations, this.radarNf);
-        console.log('computeIntersectionSegmentCircleSpace ==>', Date.now() - now, ' ms');
         // meshPlane.geometry.attributes.position.needsUpdate = true
         this.movePlane.geometry.setIndex(indices);
         this.movePlane.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -485,38 +491,23 @@ export class MouseMoveWall {
             console.log('polar', polar[0][0].azIndex, polar[0][polar[0].length - 1].azIndex);
 
             console.log('delta polar', polar[0][polar[0].length - 1].azIndex - polar[0][0].azIndex);
-            // this.draw2DImage(polar);
-            this.drawSpaceImage(polar);
+            // this.draw2DPiexlImage(polar);
+            // const canvas = this.drawSpaceImage(polar, Elevations);
+            const canvas = this.drawGridImage(polar, Elevations);
+            let texture = new THREE.CanvasTexture( canvas );
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            this.movePlane.material.map = texture;
+            this.movePlane.material.needsUpdate = true;
+            // this.drawGridImage(polar);
         }
     }
 
-    /**
-     * 极坐标转换为2d像素点
-     * 对应radarNf数据
-     * @param {*} polarCoords 
-     */
-    polorTransfrom2DImage (polarCoords) {
-        let layers2DVal = [];
-        let Elevations = this.radarNf.Header.Elevations; // 仰角
-        let GateSizeOfReflectivity = this.radarNf.Header.GateSizeOfReflectivity; // 库距离
-    
-        Elevations.forEach((ele, index) => {
-            let layer = [];
-            polarCoords.forEach(polar => {
-                let val = this.radarNf.getOriginVal(index, polar.radian | 0,  polar.distance / Math.cos(ele) / GateSizeOfReflectivity | 0);
-                layer.push(val);
-            })
-            layers2DVal.push(layer);
-        })
-    
-        return layers2DVal;
-    }
 
     /**
      * 距离库 方位角定位
      * @param {*} layers 
      */
-    draw2DImage (layers) {
+    draw2DPiexlImage (layers) {
         let now = Date.now();
         const canvas = document.querySelector('.myCanvas')
         const width = layers[0].length
@@ -562,33 +553,31 @@ export class MouseMoveWall {
      * @param {*} layers 
      */
      drawSpaceImage (layers, evelations) {
-        // let now = Date.now();
-        let canvas = document.querySelector('.myCanvas')
-     
-        const color = new THREE.Color()
-        const colorArray = MeteoInstance.colorArray;
+        let results = calcSpaceInterData(layers, evelations, true);
+        let canvas = document.querySelector('.myCanvas');
+        const mapColorsFunc = (val) => { return MeteoInstance.colorArray[val | 0]}
+        canvas = imageShow(results.reverse(), canvas, 1, mapColorsFunc);
+        let canvasWidth = canvas.clientWidth;
+        let canvasHeight = canvas.clientHeight;
+        canvas.setAttribute('class', 'myCanvas');
+        canvas.setAttribute('style', `width: ${canvasWidth}; height: ${canvasHeight}; margin-left: calc(50% - ${canvasWidth / 2}px)`);
+        return canvas;
+    }
 
-        // 预处理 插值
-       
-       
-
-        const n = 40;
-        const width = layers[0].length
-        const height = layers.length
-        const interpolate = this.bilinearInterpolator((i, j) => layers[j][i].val)
-        const results = d3.range(0, height - 1, 1 / 10).map(y => (
-            d3.range(0, width - 1, 1).map(x => {
-                return interpolate(x, y);
-            })
-        ));
-
-        canvas = this.imshow(results, 1, d3.interpolateTurbo)
-        let canvasWidth = canvas.clientWidth
-        let canvasHeight = canvas.clientHeight
-        // canvas.width = results[0].length
-        // canvas.height = results.length
-        canvas.setAttribute('class', 'myCanvas')
-        canvas.setAttribute('style', `width: ${canvasWidth}; height: ${canvasHeight}; margin-left: calc(50% - ${canvasWidth / 2}px)`)
+    /**
+     * 空间距离定位，增加高度
+     * @param {*} layers 
+     */
+    drawGridImage (layers) {
+        let results = calcGridInterData(layers);
+        let canvas = document.querySelector('.myCanvas');
+        const mapColorsFunc = (val) => { return MeteoInstance.colorArray[val | 0]}
+        canvas = imageShow(results.reverse(), canvas, 1, mapColorsFunc);
+        let canvasWidth = canvas.clientWidth;
+        let canvasHeight = canvas.clientHeight;
+        canvas.setAttribute('class', 'myCanvas');
+        canvas.setAttribute('style', `width: ${canvasWidth}; height: ${canvasHeight}; margin-left: calc(50% - ${canvasWidth / 2}px)`);
+        return canvas;
     }
 
     bilinearInterpolator = func => (x, y) => {
