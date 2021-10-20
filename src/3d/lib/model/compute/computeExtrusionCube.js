@@ -1,4 +1,7 @@
 import * as THREE from 'three'
+import { 
+  subractLocationFunc
+} from '@/3d/lib/mathCesium';
 /**
  *  三维挤压
  */
@@ -21,6 +24,8 @@ export function computeExtrusionCubeAndColors (data) {
     let centerLon = data.centerLon;
     let centerLat = data.centerLat;
     let center = data.geography2XYZ(centerLon, centerLat);
+
+    let subractLocation = subractLocationFunc(center);
     
     let centerX = center.x;
     let centerY = center.y;
@@ -54,6 +59,8 @@ export function computeExtrusionCubeAndColors (data) {
 
       // center 
       let result = data.geography2XYZ(lon + LeftLongitude , TopLatitude - lat);
+
+      result = subractLocation(result)
       // up
       // let leftTop = data.geography2XYZ(lon / 2 + LeftLongitude , TopLatitude - lat / 2);
       // let rightTop = data.geography2XYZ(lon * 3 / 2 + LeftLongitude , TopLatitude - lat / 2);

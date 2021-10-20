@@ -289,13 +289,17 @@ export class MouseMoveWall {
             Math.random(), 
             Math.random()
         ]
-        // const geometry = new THREE.PlaneGeometry(data.widthPixel * scale, data.heightPixel * scale);
+
+        let uvs = [
+            0, 0,
+            1, 0,
+            0, 1,
+            1, 1
+        ]
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vetices, 3 ) );
-        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-        // geometry.computeBoundingSphere();
+        geometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
         const material = new THREE.MeshBasicMaterial( {side: THREE.DoubleSide } );
-        // const material = new THREE.MeshBasicMaterial( {side: THREE.DoubleSide, vertexColors: true} );
         material.map = new THREE.CanvasTexture( document.querySelector('.myCanvas') );
         material.map.needsUpdate = true;
         this.movePlane = new THREE.Mesh( geometry, material );
@@ -304,7 +308,8 @@ export class MouseMoveWall {
         MeteoInstance.three.scene.add(this.movePlane);
         let minWGS84 = MeteoInstance.minWGS84;
         let maxWGS84 = MeteoInstance.maxWGS84;
-        var _3DOB = new Object3D(this.movePlane, minWGS84, maxWGS84, true)
+        var _3DOB = new Object3D(this.movePlane, minWGS84, maxWGS84);
+        // var _3DOB = new Object3D(this.movePlane, minWGS84, maxWGS84, true)
         let objectStoreIns = MeteoInstance.objectStoreIns;
         objectStoreIns.push(_3DOB)
     }
@@ -375,9 +380,32 @@ export class MouseMoveWall {
     
         // window.addEventListener('keyup', this.keyUpHandle.bind(this))
     
-        domElement.addEventListener('click', this.clickHandle.bind(this))
+        domElement.addEventListener('click', this.clickHandle.bind(this), false)
     
-        domElement.addEventListener('mousemove', this.mouseMoveHandle.bind(this));
+        domElement.addEventListener('mousemove', this.mouseMoveHandle.bind(this), false);
+    }
+
+    removeEvents () {
+        let domElement = MeteoInstance.cesium.viewer.scene.canvas;
+        
+        // window.addEventListener('keydown', this.keyDownHandle.bind(this))
+    
+        // window.addEventListener('keyup', this.keyUpHandle.bind(this))
+    
+        domElement.removeEventListener('click', this.clickHandle.bind(this), false)
+    
+        domElement.removeEventListener('mousemove', this.mouseMoveHandle.bind(this), false);
+    }
+
+    destroy () {
+        this.removeEvents();
+        this._computeClipLineDot = null;
+        this._updateMeshMovePlane = null;
+
+        this.movePlane = null;
+
+        this.radarNf = null;
+        this.raycaster = null;
     }
 
     keyDownHandle(e) {
@@ -492,8 +520,8 @@ export class MouseMoveWall {
 
             console.log('delta polar', polar[0][polar[0].length - 1].azIndex - polar[0][0].azIndex);
             // this.draw2DPiexlImage(polar);
-            // const canvas = this.drawSpaceImage(polar, Elevations);
-            const canvas = this.drawGridImage(polar, Elevations);
+            const canvas = this.drawSpaceImage(polar, Elevations);
+            // const canvas = this.drawGridImage(polar);
             let texture = new THREE.CanvasTexture( canvas );
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             this.movePlane.material.map = texture;
@@ -579,65 +607,6 @@ export class MouseMoveWall {
         canvas.setAttribute('style', `width: ${canvasWidth}; height: ${canvasHeight}; margin-left: calc(50% - ${canvasWidth / 2}px)`);
         return canvas;
     }
-
-    bilinearInterpolator = func => (x, y) => {
-        // "func" is a function that takes 2 integer arguments and returns some value
-        const x1 = Math.floor(x);
-        const x2 = Math.ceil(x);
-        const y1 = Math.floor(y);
-        const y2 = Math.ceil(y);
-      
-        if ((x1 === x2) && (y1 === y2)) return func(x1, y1);
-        if (x1 === x2) {
-          return (func(x1, y1) * (y2 - y) + func(x1, y2) * (y - y1)) / (y2 - y1);
-        }
-        if (y1 === y2) {
-          return (func(x1, y1) * (x2 - x) + func(x2, y1) * (x - x1)) / (x2 - x1);
-        }
-      
-        // else: x1 != x2 and y1 != y2
-        return (
-          func(x1, y1) * (x2 - x) * (y2 - y) +
-          func(x2, y1) * (x - x1) * (y2 - y) +
-          func(x1, y2) * (x2 - x) * (y - y1) +
-          func(x2, y2) * (x - x1) * (y - y1)
-        )
-        / ((x2 - x1) * (y2 - y1));
-    }
-
-    imshow(data, pixelSize, color) {
-        // Flatten 2D input array
-        const flat = [].concat.apply([], data);
-        // Color Scale & Min-Max normalization
-        const [min, max] = d3.extent(flat);
-        const normalize = d => ((d-min)/(max-min));
-        const colorScale = d => color(normalize(d));
-        // Shape of input array
-        const shape = {x: data[0].length, y: data.length};
-      
-        // Set up canvas element
-        const canvas = document.querySelector('.myCanvas');
-        const context = canvas.getContext("2d");
-        context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-        canvas.style.width  = `${shape.x * pixelSize}px`;
-        canvas.style.height = `${shape.y * pixelSize}px`;
-        canvas.width = shape.x * pixelSize;
-        canvas.height = shape.y * pixelSize;
-        canvas.style.imageRendering = "pixelated";
-      
-        // Draw pixels to the canvas
-        const imageData = context.createImageData(shape.x, shape.y);
-        flat.forEach((d, i) => {
-          let color = isNaN(d) ? {r: 0, g: 0, b: 0} : d3.color(MeteoInstance.colorArray[d | 0]);
-          imageData.data[i*4  ] = color.r;
-          imageData.data[i*4+1] = color.g;
-          imageData.data[i*4+2] = color.b;
-          imageData.data[i*4+3] = 255;
-        });
-        context.putImageData(imageData, 0, 0);
-      
-        return canvas;
-      }
 
      /**
      * 

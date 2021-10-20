@@ -127,10 +127,10 @@ import * as THREE from 'three';
         }
       }
   } 
-  console.log('vertices ==>', vertices);
-  console.log('colors   ==>', colors);
-  console.log('indices  ==>', indices);
-  console.log('valMap  ==>', valMap);
+  // console.log('vertices ==>', vertices);
+  // console.log('colors   ==>', colors);
+  // console.log('indices  ==>', indices);
+  // console.log('valMap  ==>', valMap);
   return {
     vertices,
     colors,
@@ -259,4 +259,25 @@ export function subractLocation(point, center) {
     var end = Cesium.Matrix4.multiplyByPoint(worldToLocal_Matrix, point, new Cesium.Cartesian3());
     
     return Cesium.Cartesian3.subtract(start, end, new Cesium.Cartesian3());;
+}
+
+
+/**
+ * 计算a点和b点的 局部向量差
+ * @param {*} center 
+ * @param {*} point 
+ * @returns 
+ */
+ export function subractLocationFunc(center) {
+  //以a点为原点建立局部坐标系（东方向为x轴,北方向为y轴,垂直于地面为z轴），得到一个局部坐标到世界坐标转换的变换矩阵
+  var localToWorld_Matrix = Cesium.Transforms.eastNorthUpToFixedFrame(center);
+  //求世界坐标到局部坐标的变换矩阵
+  var worldToLocal_Matrix = Cesium.Matrix4.inverse(localToWorld_Matrix, new Cesium.Matrix4());    	
+  //a点在局部坐标的位置，其实就是局部坐标原点
+  var start = Cesium.Matrix4.multiplyByPoint(worldToLocal_Matrix, center, new Cesium.Cartesian3());
+  //B点在以A点为原点的局部的坐标位置
+  return function (point) {
+    var end = Cesium.Matrix4.multiplyByPoint(worldToLocal_Matrix, point, new Cesium.Cartesian3());
+    return Cesium.Cartesian3.subtract(end, start, new Cesium.Cartesian3());;
+  }
 }

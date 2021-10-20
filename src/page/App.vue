@@ -19,6 +19,7 @@
 import { loadPng } from '@/3d/lib/FileParser/png/loadPngData';
 import { loadCRPZ } from '@/3d/lib/FileParser/CRPZ/CRPZLoader';
 import { loadMax } from '@/3d/lib/FileParser/Max/MaxLoader';
+import { loadRTDPZ } from '@/3d/lib/FileParser/RTDPZ/RTDPZLoader';
 import ColorProcess from '@/3d/lib/ColorCardParser/color/ColorProcess';
 import ClrView from './components/ClrView.vue';
 import { measureLine } from '@/3d/lib/tool/measure';
@@ -28,7 +29,7 @@ export default {
   components: { ClrView },
   data() {
     return {
-      productionNames: ['点', '面', '体', '挤压', 'Max'],
+      productionNames: ['点', '面', '体', '挤压', 'Max', '格点数据'],
       activeIndex: -1,
       baseURL: 'http://222.18.149.195:9091/configs/Clr/',
     //   fileName: 'clrZ.clr'
@@ -37,8 +38,13 @@ export default {
   },
   methods: {
     switchMode (index) {
-        let indexMapName = ['point', 'face', 'cube', 'extrusion', 'max']
+        let indexMapName = ['point', 'face', 'cube', 'extrusion', 'max', 'grid']
         this.activeIndex = index;
+
+        if (window.wall) {
+            window.wall.destroy();
+        }
+
         if (index < 3) {
             const colorPrcess = new ColorProcess()
             colorPrcess.initPromise(this.fileName, this.baseURL).then((data) => {
@@ -80,6 +86,18 @@ export default {
                   this.$main3D.productionSwitch(indexMapName[index], data);
                 });
             })
+        } else if( index === 5) {
+            const colorPrcess = new ColorProcess();
+            colorPrcess.initPromise(this.fileName, this.baseURL).then((data) => {
+                MeteoInstance.colorCard = data.colorArray.map(hexString => {
+                    return window.parseInt(`0x${hexString.slice(1)}`);
+                });
+                MeteoInstance.colorArray = data.colorArray;
+                loadRTDPZ().then((data) => {
+                  console.log('loadRTDPZ ==>', data);
+                  this.$main3D.productionSwitch(indexMapName[index], data);
+                });
+            })
         }
     },
   },
@@ -88,7 +106,7 @@ export default {
 
     this.$socket.loginInfIdentify(this.$socketConst.LOGIN_IN, 'user001', '888888');
 
-    this.switchMode(0)
+    this.switchMode(5)
   }
 }
 </script>

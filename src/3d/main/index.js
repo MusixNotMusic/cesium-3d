@@ -12,6 +12,7 @@ import { drawFaceMesh } from '@/3d/lib/model/drawFaceEle';
 import { drawExtrusionMesh } from '@/3d/lib/model/drawExtrusionFace';
 import { drawPointsMesh } from '@/3d/lib/model/drawPointsEle';
 import { drawMaxPlane } from '@/3d/lib/model/drawMaxPlane';
+import { drawGridMesh } from '@/3d/lib/model/drawGrid';
 import { drawGround } from '@/3d/lib/model/drawGround';
 
 let minWGS84 = [104.065735, 30.659462]
@@ -65,6 +66,7 @@ export class Main3D {
       case 'cube':        this.drawCube(data); break;
       case 'extrusion':   this.drawExtruion(data); break;
       case 'max':         this.drawMax(data); break;
+      case 'grid':        this.drawGrid(data); break;
     }
   }
 
@@ -189,7 +191,10 @@ export class Main3D {
 
     objectStoreIns.push(new Object3D(faceMesh, minWGS84, maxWGS84));
   }
-
+  /**
+   * max 
+   * @param {*} data 
+   */
   drawMax(data) {
     let minWGS84 = [data.Headers.centerLon, data.Headers.centerLat];
     let maxWGS84 = [data.Headers.centerLon, data.Headers.centerLat];
@@ -217,6 +222,29 @@ export class Main3D {
     objectStoreIns.push(new Object3D(moveWe, minWGS84, maxWGS84));
   }
   
+  /**
+   * 绘制格点数据 
+   * @param {*} data 
+   */
+  drawGrid(data) {
+    let minWGS84 = [data.centerLon, data.centerLat];
+    let maxWGS84 = [data.centerLon, data.centerLat];
+
+    let objectStoreIns = MeteoInstance.objectStoreIns;
+    
+    let points = drawGridMesh(data);
+
+    MeteoInstance.three.scene.add(points);
+
+    objectStoreIns.store.forEach(object => {
+      object.minWGS84 = minWGS84;
+      object.maxWGS84 = maxWGS84;
+    });
+
+    objectStoreIns.push(new Object3D(points, minWGS84, maxWGS84));
+    // objectStoreIns.push(new Object3D(points, [0, 0], [0, 0]));
+  }
+
   drawAssist() {
     let objectStoreIns = MeteoInstance.objectStoreIns;
     // axesHelper
