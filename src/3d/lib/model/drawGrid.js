@@ -9,7 +9,7 @@ export function drawGridMesh(data) {
   
     // geometry.computeBoundingSphere();
     //
-    const material = new THREE.PointsMaterial({ size: 500, vertexColors: true, transparent: true, opacity: 0.4 });
+    const material = new THREE.PointsMaterial({ size: 20, vertexColors: true, transparent: true, opacity: 0.4 });
   
     var points = new THREE.Points(geometry, material);
     

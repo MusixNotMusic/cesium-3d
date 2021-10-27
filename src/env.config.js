@@ -1,6 +1,6 @@
 export const appIP = '222.18.149.104';
 // export const appIP = '127.0.0.1';
-export const appPort = '8081';
+export const appPort = '8082';
 export const origin = appIP + ':' + appPort;
 
 export const socketIP = '222.18.149.191';

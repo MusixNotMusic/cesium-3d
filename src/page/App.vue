@@ -180,7 +180,7 @@ export default {
         .color-card {
             position: fixed;
             left: 20px;
-            bottom: 100px;
+            bottom: 140px;
             width: 80px;
             height: 300px;
         }

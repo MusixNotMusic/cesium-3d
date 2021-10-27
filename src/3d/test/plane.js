@@ -308,8 +308,8 @@ export class MouseMoveWall {
         MeteoInstance.three.scene.add(this.movePlane);
         let minWGS84 = MeteoInstance.minWGS84;
         let maxWGS84 = MeteoInstance.maxWGS84;
-        var _3DOB = new Object3D(this.movePlane, minWGS84, maxWGS84);
-        // var _3DOB = new Object3D(this.movePlane, minWGS84, maxWGS84, true)
+        // var _3DOB = new Object3D(this.movePlane, minWGS84, maxWGS84);
+        var _3DOB = new Object3D(this.movePlane, minWGS84, maxWGS84, true)
         let objectStoreIns = MeteoInstance.objectStoreIns;
         objectStoreIns.push(_3DOB)
     }
@@ -520,13 +520,12 @@ export class MouseMoveWall {
 
             console.log('delta polar', polar[0][polar[0].length - 1].azIndex - polar[0][0].azIndex);
             // this.draw2DPiexlImage(polar);
-            const canvas = this.drawSpaceImage(polar, Elevations);
-            // const canvas = this.drawGridImage(polar);
-            let texture = new THREE.CanvasTexture( canvas );
-            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-            this.movePlane.material.map = texture;
-            this.movePlane.material.needsUpdate = true;
-            // this.drawGridImage(polar);
+            // const canvas = this.drawSpaceImage(polar, Elevations);
+            // let texture = new THREE.CanvasTexture( canvas );
+            // texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            // this.movePlane.material.map = texture;
+            // this.movePlane.material.needsUpdate = true;
+            this.drawGridImage(polar);
         }
     }
 
